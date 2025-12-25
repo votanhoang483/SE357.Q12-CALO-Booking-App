@@ -3,18 +3,20 @@ import 'package:calo_booking_app/presentation/screens/court_detail_screen.dart';
 import 'package:calo_booking_app/presentation/screens/account_screen.dart';
 import 'package:calo_booking_app/presentation/screens/map_screen.dart';
 import 'package:calo_booking_app/presentation/screens/notification_screen.dart';
+import 'package:calo_booking_app/presentation/viewmodels/search_court_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedNavIndex = 0;
   final TextEditingController _searchController = TextEditingController();
 
@@ -23,31 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     initializeDateFormatting('vi_VN');
   }
-
-  // Mock data - Replace with real data from repository
-  final List<CourtModel> courts = [
-    CourtModel(
-      id: '1',
-      name: 'Câu lạc bộ cầu lông cây da 1',
-      location: '(32m) Hẻm 05 Đinh Tấn Quỳ, Dương ...',
-      pricePerHour: 50000,
-      isActive: true,
-    ),
-    CourtModel(
-      id: '2',
-      name: 'Câu lạc bộ cầu lông cây da 1',
-      location: '(32m) Hẻm 05 Đinh Tấn Quỳ, Dương ...',
-      pricePerHour: 50000,
-      isActive: true,
-    ),
-    CourtModel(
-      id: '3',
-      name: 'Câu lạc bộ cầu lông cây da 1',
-      location: '(32m) Hẻm 05 Đinh Tấn Quỳ, Dương ...',
-      pricePerHour: 50000,
-      isActive: true,
-    ),
-  ];
 
   String _getUserName() {
     return 'Võ Tân Hoàng';
@@ -70,6 +47,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch courts from Riverpod provider
+    final courtsState = ref.watch(searchCourtViewModelProvider);
+
     // Show different screens based on selected nav index
     switch (_selectedNavIndex) {
       case 1:
@@ -179,6 +159,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               vertical: 12,
                             ),
                           ),
+                          onChanged: (value) {
+                            ref
+                                .read(searchCourtViewModelProvider.notifier)
+                                .updateKeyword(value);
+                          },
                         ),
                       ),
                     ),
@@ -213,12 +198,71 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // Court Cards List
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: courts.length,
-                  itemBuilder: (context, index) {
-                    final court = courts[index];
-                    return buildCourtCard(context, court);
+                child: courtsState.when(
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  error: (error, stackTrace) => Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Lỗi tải dữ liệu',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          error.toString(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  data: (courts) {
+                    if (courts.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.sports_tennis,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Không tìm thấy sân',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: courts.length,
+                      itemBuilder: (context, index) {
+                        final court = courts[index];
+                        return buildCourtCard(context, court);
+                      },
+                    );
                   },
                 ),
               ),
