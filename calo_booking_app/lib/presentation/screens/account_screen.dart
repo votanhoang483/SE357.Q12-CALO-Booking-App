@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calo_booking_app/presentation/screens/booked_schedule_screen.dart';
+import 'package:calo_booking_app/presentation/viewmodels/auth_viewmodel.dart';
 
-class AccountScreen extends StatefulWidget {
+class AccountScreen extends ConsumerStatefulWidget {
   final Function(int) onNavChange;
 
   const AccountScreen({super.key, required this.onNavChange});
 
   @override
-  State<AccountScreen> createState() => _AccountScreenState();
+  ConsumerState<AccountScreen> createState() => _AccountScreenState();
 }
 
-class _AccountScreenState extends State<AccountScreen> {
+class _AccountScreenState extends ConsumerState<AccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -147,7 +149,10 @@ class _AccountScreenState extends State<AccountScreen> {
               // Logout Button
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildLogoutButton(),
+                child: GestureDetector(
+                  onTap: _showLogoutDialog,
+                  child: _buildLogoutButton(),
+                ),
               ),
 
               const SizedBox(height: 32),
@@ -254,6 +259,40 @@ class _AccountScreenState extends State<AccountScreen> {
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: Colors.red,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Đăng xuất'),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Không'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await ref.read(authProvider.notifier).logout();
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Lỗi: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'Đăng xuất',
+              style: TextStyle(color: Colors.red),
             ),
           ),
         ],

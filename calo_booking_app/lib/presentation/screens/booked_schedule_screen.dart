@@ -3,11 +3,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calo_booking_app/presentation/screens/booking_detail_screen.dart';
 import 'package:calo_booking_app/presentation/viewmodels/bookings_viewmodel.dart';
 
-class BookedScheduleScreen extends ConsumerWidget {
+class BookedScheduleScreen extends ConsumerStatefulWidget {
   const BookedScheduleScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BookedScheduleScreen> createState() =>
+      _BookedScheduleScreenState();
+}
+
+class _BookedScheduleScreenState extends ConsumerState<BookedScheduleScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Load bookings from Firestore when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(bookingsProvider.notifier).loadAllBookings();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final bookings = ref.watch(bookingsProvider);
 
     return Scaffold(
@@ -29,10 +44,7 @@ class BookedScheduleScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Text(
                     'Bạn chưa có đặt lịch nào',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -72,10 +84,8 @@ class BookedScheduleScreen extends ConsumerWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: bookings.length,
-                    separatorBuilder: (context, index) => const Divider(
-                      height: 1,
-                      color: Colors.grey,
-                    ),
+                    separatorBuilder: (context, index) =>
+                        const Divider(height: 1, color: Colors.grey),
                     itemBuilder: (context, index) {
                       final booking = bookings[index];
                       return GestureDetector(
@@ -158,10 +168,7 @@ class BookedScheduleScreen extends ConsumerWidget {
           // Address
           Text(
             'Địa chỉ: ${booking['address']}',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade700,
-            ),
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
           ),
         ],
       ),
@@ -179,4 +186,3 @@ class BookedScheduleScreen extends ConsumerWidget {
     }
   }
 }
-

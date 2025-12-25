@@ -4,6 +4,7 @@ import 'package:calo_booking_app/presentation/screens/account_screen.dart';
 import 'package:calo_booking_app/presentation/screens/map_screen.dart';
 import 'package:calo_booking_app/presentation/screens/notification_screen.dart';
 import 'package:calo_booking_app/presentation/viewmodels/search_court_viewmodel.dart';
+import 'package:calo_booking_app/presentation/viewmodels/bookings_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -24,6 +25,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     initializeDateFormatting('vi_VN');
+    // Load bookings from Firestore on app start
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(bookingsProvider.notifier).loadAllBookings();
+    });
   }
 
   String _getUserName() {
@@ -199,9 +204,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // Court Cards List
               Expanded(
                 child: courtsState.when(
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (error, stackTrace) => Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
