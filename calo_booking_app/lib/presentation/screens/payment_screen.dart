@@ -274,7 +274,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     final newBooking = {
                       'courtName': widget.court.name,
                       'status': 'Đã xác nhận',
-                      'statusColor': Colors.green,
                       'courts': _formatSelectedSlots(),
                       'date': DateFormat('dd/MM/yyyy').format(widget.selectedDate),
                       'address': widget.court.location,
@@ -283,12 +282,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     // Save booking to provider
                     ref.read(bookingsProvider.notifier).addBooking(newBooking);
 
-                    // Navigate to home screen
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
-                      (route) => false,
-                    );
+                    // Show success dialog
+                    _showSuccessDialog(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD4A820),
@@ -377,6 +372,97 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showSuccessDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        backgroundColor: const Color(0xFFF0F9F7),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Success Icon
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFEDCC),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.check_circle,
+                    size: 60,
+                    color: Color(0xFFD4A820),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Success Title
+              const Text(
+                'Đặt sân thành công!',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+
+              // Booking Details
+              Text(
+                'Bạn đã đặt thành công sân ${_formatSelectedSlots()} ngày ${DateFormat('dd/MM/yyyy').format(widget.selectedDate)}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+
+              // Close Button
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HomeScreen()),
+                      (route) => false,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1B7A6B),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Đóng',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

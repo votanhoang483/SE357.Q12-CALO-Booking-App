@@ -17,10 +17,13 @@ class BookingsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
   // Add booking to Firestore
   Future<void> addBooking(Map<String, dynamic> booking) async {
     try {
+      // Remove statusColor before saving (it's only for UI)
+      booking.remove('statusColor');
+      
       // Save to Firestore
       final bookingId = await _bookingRepository.createBooking(booking);
       
-      // Add ID to booking data
+      // Add ID to booking data for local state
       booking['id'] = bookingId;
       
       // Update local state
