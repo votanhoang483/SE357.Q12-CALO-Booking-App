@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "81423788056",
+    "project_id": "calo-booking-app",
+    "storage_bucket": "calo-booking-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:81423788056:android:72e59bd52f33db1989fb6d",
+        "android_client_info": {
+          "package_name": "com.example.calo_booking_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB5kDKjHSzPJBKG-LEKc-S1g2POyO-W-pY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
