@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:calo_booking_app/presentation/screens/booked_schedule_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   final Function(int) onNavChange;
@@ -88,7 +89,14 @@ class _AccountScreenState extends State<AccountScreen> {
               _buildMenuCard(
                 icon: Icons.calendar_today,
                 title: 'Lịch đã đặt',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const BookedScheduleScreen(),
+                    ),
+                  );
+                },
               ),
               _buildMenuCard(
                 icon: Icons.people,

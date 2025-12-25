@@ -4,10 +4,12 @@ import 'package:calo_booking_app/data/models/user_model.dart';
 import 'package:calo_booking_app/presentation/screens/home_screen.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_type_sheet.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_target_sheet.dart';
+import 'package:calo_booking_app/presentation/viewmodels/bookings_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-class PaymentScreen extends StatefulWidget {
+class PaymentScreen extends ConsumerStatefulWidget {
   final CourtModel court;
   final DateTime selectedDate;
   final Set<String> selectedSlots;
@@ -30,10 +32,10 @@ class PaymentScreen extends StatefulWidget {
   });
 
   @override
-  State<PaymentScreen> createState() => _PaymentScreenState();
+  ConsumerState<PaymentScreen> createState() => _PaymentScreenState();
 }
 
-class _PaymentScreenState extends State<PaymentScreen> {
+class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   late Timer _timer;
   int _remainingSeconds = 300; // 5 minutes
 
@@ -268,6 +270,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () {
+                    // Create booking object
+                    final newBooking = {
+                      'courtName': widget.court.name,
+                      'status': 'Đã xác nhận',
+                      'statusColor': Colors.green,
+                      'courts': _formatSelectedSlots(),
+                      'date': DateFormat('dd/MM/yyyy').format(widget.selectedDate),
+                      'address': widget.court.location,
+                    };
+
+                    // Save booking to provider
+                    ref.read(bookingsProvider.notifier).addBooking(newBooking);
+
+                    // Navigate to home screen
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (_) => const HomeScreen()),
