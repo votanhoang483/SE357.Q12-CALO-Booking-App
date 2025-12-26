@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calo_booking_app/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:calo_booking_app/presentation/viewmodels/user_viewmodel.dart';
 import 'package:calo_booking_app/presentation/screens/register_screen.dart';
+import 'package:calo_booking_app/presentation/screens/home_screen.dart';
+import 'package:calo_booking_app/presentation/screens/staff_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -49,11 +51,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           context,
         ).showSnackBar(const SnackBar(content: Text('Đăng nhập thành công')));
 
-        // FirebaseAuth will emit user change, so authStateProvider will update automatically
-        // MyApp is watching authStateProvider and will rebuild when user changes
-        print(
-          '🔄 FirebaseAuth emitted auth state change, MyApp will rebuild automatically...',
-        );
+        // Wait a moment for user data to load
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Get user role to determine which screen to show
+        final userDoc = await ref.read(currentUserDocProvider.future);
+        final role = userDoc?['role'] as String? ?? 'user';
+
+        if (mounted) {
+          // Navigate based on role
+          if (role == 'staff') {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const StaffScreen()),
+              (route) => false,
+            );
+          } else {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+              (route) => false,
+            );
+          }
+        }
+
+        print('🔄 Navigated to appropriate screen based on role: $role');
       }
     } catch (e) {
       print('❌ Login error: $e');

@@ -20,6 +20,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
   String _selectedRole = 'user'; // 'user' or 'staff'
+  String? _selectedCourt; // Court selection for staff
 
   @override
   void dispose() {
@@ -60,6 +61,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Validate court selection for staff
+      if (_selectedRole == 'staff' && _selectedCourt == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vui lòng chọn sân cho nhân viên')),
+        );
+        setState(() => _isLoading = false);
+        return;
+      }
+
       print('📝 Starting registration...');
       await ref
           .read(authProvider.notifier)
@@ -69,6 +79,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text,
             role: _selectedRole,
+            courtId: _selectedCourt,
           );
 
       print('✅ Registration successful!');
@@ -214,7 +225,90 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Name Field
+                // Court Selection for Staff
+                if (_selectedRole == 'staff') ...[
+                  const Text(
+                    'Chọn sân',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () =>
+                              setState(() => _selectedCourt = 'court1'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: _selectedCourt == 'court1'
+                                    ? const Color(0xFF1B7A6B)
+                                    : Colors.grey.shade300,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              color: _selectedCourt == 'court1'
+                                  ? const Color(0xFF1B7A6B).withOpacity(0.1)
+                                  : Colors.transparent,
+                            ),
+                            child: Text(
+                              'Sân 1',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: _selectedCourt == 'court1'
+                                    ? const Color(0xFF1B7A6B)
+                                    : Colors.grey,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () =>
+                              setState(() => _selectedCourt = 'court2'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: _selectedCourt == 'court2'
+                                    ? const Color(0xFF1B7A6B)
+                                    : Colors.grey.shade300,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              color: _selectedCourt == 'court2'
+                                  ? const Color(0xFF1B7A6B).withOpacity(0.1)
+                                  : Colors.transparent,
+                            ),
+                            child: Text(
+                              'Sân 2',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: _selectedCourt == 'court2'
+                                    ? const Color(0xFF1B7A6B)
+                                    : Colors.grey,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                ],
                 const Text(
                   'Họ tên',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),

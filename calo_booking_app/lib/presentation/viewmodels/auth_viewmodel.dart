@@ -27,6 +27,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     required String name,
     required String phone,
     required String role,
+    String? courtId,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -36,6 +37,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         name: name,
         phone: phone,
         role: role,
+        courtId: courtId,
       );
       state = const AsyncValue.data(null);
     } catch (e, st) {

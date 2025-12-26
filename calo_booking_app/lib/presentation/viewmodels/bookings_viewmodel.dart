@@ -57,6 +57,19 @@ class BookingsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
     }
   }
 
+  // Load bookings for a specific court (for staff)
+  Future<void> loadCourtBookings(String courtId) async {
+    try {
+      print('📋 Loading bookings for courtId: $courtId');
+      final bookings = await _bookingRepository.getCourtBookings(courtId);
+      print('📊 Loaded ${bookings.length} bookings for court: $courtId');
+      state = bookings;
+    } catch (e) {
+      print('❌ Error loading court bookings: $e');
+      rethrow;
+    }
+  }
+
   // Cancel booking
   Future<void> cancelBooking(String bookingId) async {
     try {

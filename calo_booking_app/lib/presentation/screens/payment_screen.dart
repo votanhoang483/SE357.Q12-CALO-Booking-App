@@ -467,6 +467,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                             .doc(widget.bookingId)
                             .update({
                               'userId': userId,
+                              'courtId': widget.court.id,
                               'status': _receiptUploaded
                                   ? 'Đã thanh toán'
                                   : 'Chưa thanh toán',

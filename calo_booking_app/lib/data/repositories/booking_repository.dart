@@ -102,6 +102,28 @@ class BookingRepository {
     }
   }
 
+  // Get bookings for a specific court (for staff)
+  Future<List<Map<String, dynamic>>> getCourtBookings(String courtId) async {
+    try {
+      print('🔥 Fetching bookings for courtId: $courtId');
+      final querySnapshot = await _firestore
+          .collection('bookings')
+          .where('courtId', isEqualTo: courtId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      print(
+        '✅ Found ${querySnapshot.docs.length} bookings for court: $courtId',
+      );
+      return querySnapshot.docs.map((doc) {
+        return {'id': doc.id, ...doc.data()};
+      }).toList();
+    } catch (e) {
+      print('❌ Error fetching court bookings: $e');
+      return [];
+    }
+  }
+
   // Update booking status
   Future<void> updateBookingStatus(String bookingId, String newStatus) async {
     try {

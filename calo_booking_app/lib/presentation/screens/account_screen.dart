@@ -395,13 +395,18 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                       duration: Duration(seconds: 1),
                     ),
                   );
+
+                  // Navigate to LoginScreen after logout
+                  await Future.delayed(const Duration(milliseconds: 500));
+                  if (screenContext.mounted) {
+                    Navigator.of(screenContext).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  }
                 }
 
-                // Don't navigate - let authStateProvider emit null
-                // MyApp will rebuild automatically and show LoginScreen
-                print(
-                  '🔄 AuthStateProvider emitted null, MyApp will rebuild...',
-                );
+                print('🔄 Navigated to LoginScreen');
               } catch (e) {
                 print('❌ Logout error: $e');
                 if (screenContext.mounted) {

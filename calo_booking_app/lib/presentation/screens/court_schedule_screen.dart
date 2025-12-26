@@ -98,14 +98,15 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
       final dateString = DateFormat('dd/MM/yyyy').format(date);
       print('📅 Loading booked slots for: $dateString');
 
-      // Query bookings collection for this date
+      // Query bookings collection for this date AND this court
       final firestore = FirebaseFirestore.instance;
       final now = Timestamp.now();
 
-      // Get all bookings for this date that are either confirmed or not expired
+      // Get all bookings for this date and court that are either confirmed or not expired
       final bookingsSnapshot = await firestore
           .collection('bookings')
           .where('date', isEqualTo: dateString)
+          .where('courtId', isEqualTo: widget.court.id)
           .get();
 
       // Filter: include confirmed bookings + non-expired draft bookings

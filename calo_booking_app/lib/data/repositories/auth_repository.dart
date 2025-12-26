@@ -20,6 +20,7 @@ class AuthRepository {
     required String name,
     required String phone,
     required String role, // 'user' or 'staff'
+    String? courtId, // For staff only
   }) async {
     try {
       print('📝 Starting registration for: $email with role: $role');
@@ -36,14 +37,25 @@ class AuthRepository {
         print(
           '💾 Creating user document in Firestore for: ${userCredential.user!.uid}',
         );
-        await _firestore.collection('users').doc(userCredential.user!.uid).set({
+        final userData = {
           'name': name,
           'phoneNumber': phone,
           'email': email,
           'role': role,
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
-        });
+        };
+
+        // Add courtId if staff
+        if (role == 'staff' && courtId != null) {
+          userData['courtId'] = courtId;
+          print('📍 Staff assigned to court: $courtId');
+        }
+
+        await _firestore
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set(userData);
         print('✅ User document created successfully with role: $role');
       }
 
