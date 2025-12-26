@@ -1,6 +1,8 @@
 import 'package:calo_booking_app/presentation/screens/home_screen.dart';
+import 'package:calo_booking_app/presentation/screens/staff_screen.dart';
 import 'package:calo_booking_app/presentation/screens/login_screen.dart';
 import 'package:calo_booking_app/presentation/viewmodels/auth_viewmodel.dart';
+import 'package:calo_booking_app/presentation/viewmodels/user_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,20 +28,47 @@ class MyApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       title: 'CALO Booking App',
       home: authState.when(
-        loading: () => const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        ),
-        error: (error, stackTrace) => const Scaffold(
-          body: Center(
-            child: Text('Lỗi tải dữ liệu'),
-          ),
-        ),
+        loading: () =>
+            const Scaffold(body: Center(child: CircularProgressIndicator())),
+        error: (error, stackTrace) =>
+            const Scaffold(body: Center(child: Text('Lỗi tải dữ liệu'))),
         data: (user) {
-          // If user is logged in, show HomeScreen, otherwise show LoginScreen
-          return user != null ? const HomeScreen() : const LoginScreen();
+          if (user == null) {
+            return const LoginScreen();
+          }
+
+          // User is logged in, check role
+          return _RoleBasedHome(userId: user.uid);
         },
+      ),
+    );
+  }
+}
+
+class _RoleBasedHome extends ConsumerWidget {
+  final String userId;
+
+  const _RoleBasedHome({required this.userId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userDocAsync = ref.watch(currentUserDocProvider);
+
+    return userDocAsync.when(
+      data: (userDoc) {
+        final role = userDoc?['role'] as String? ?? 'user';
+
+        // Navigate based on role
+        if (role == 'staff') {
+          return const StaffScreen();
+        } else {
+          return const HomeScreen();
+        }
+      },
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, _) => const Scaffold(
+        body: Center(child: Text('Lỗi tải thông tin người dùng')),
       ),
     );
   }

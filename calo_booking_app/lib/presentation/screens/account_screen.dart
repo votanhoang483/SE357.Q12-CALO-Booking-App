@@ -386,6 +386,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 print('🔓 Logging out...');
                 await ref.read(authProvider.notifier).logout();
 
+                print('✅ Logout successful!');
+
                 if (screenContext.mounted) {
                   ScaffoldMessenger.of(screenContext).showSnackBar(
                     const SnackBar(
@@ -395,15 +397,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   );
                 }
 
-                // Navigate to login after logout
-                if (screenContext.mounted) {
-                  await Future.delayed(const Duration(milliseconds: 800));
-                  Navigator.pushAndRemoveUntil(
-                    screenContext,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-                }
+                // Don't navigate - let authStateProvider emit null
+                // MyApp will rebuild automatically and show LoginScreen
+                print(
+                  '🔄 AuthStateProvider emitted null, MyApp will rebuild...',
+                );
               } catch (e) {
                 print('❌ Logout error: $e');
                 if (screenContext.mounted) {

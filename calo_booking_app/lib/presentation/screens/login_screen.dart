@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calo_booking_app/presentation/viewmodels/auth_viewmodel.dart';
+import 'package:calo_booking_app/presentation/viewmodels/user_viewmodel.dart';
 import 'package:calo_booking_app/presentation/screens/register_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -34,21 +35,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await ref.read(authProvider.notifier).login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      print('🔐 Attempting login with email: ${_emailController.text.trim()}');
+      await ref
+          .read(authProvider.notifier)
+          .login(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
 
+      print('✅ Login successful!');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đăng nhập thành công')),
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Đăng nhập thành công')));
+
+        // FirebaseAuth will emit user change, so authStateProvider will update automatically
+        // MyApp is watching authStateProvider and will rebuild when user changes
+        print(
+          '🔄 FirebaseAuth emitted auth state change, MyApp will rebuild automatically...',
         );
       }
     } catch (e) {
+      print('❌ Login error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đăng nhập thất bại: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Đăng nhập thất bại: $e')));
       }
     } finally {
       if (mounted) {
@@ -84,10 +96,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const Center(
                   child: Text(
                     'Ứng dụng đặt sân cầu lông',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ),
                 const SizedBox(height: 60),
@@ -95,10 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Email Field
                 const Text(
                   'Email',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -120,10 +126,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Password Field
                 const Text(
                   'Mật khẩu',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -145,8 +148,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             : Icons.visibility,
                       ),
                       onPressed: () {
-                        setState(() =>
-                            _obscurePassword = !_obscurePassword);
+                        setState(() => _obscurePassword = !_obscurePassword);
                       },
                     ),
                   ),
@@ -162,10 +164,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     },
                     child: const Text(
                       'Quên mật khẩu?',
-                      style: TextStyle(
-                        color: Color(0xFF1B7A6B),
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Color(0xFF1B7A6B), fontSize: 12),
                     ),
                   ),
                 ),
@@ -208,10 +207,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: Container(
-                        height: 1,
-                        color: Colors.grey.shade300,
-                      ),
+                      child: Container(height: 1, color: Colors.grey.shade300),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -224,10 +220,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                     Expanded(
-                      child: Container(
-                        height: 1,
-                        color: Colors.grey.shade300,
-                      ),
+                      child: Container(height: 1, color: Colors.grey.shade300),
                     ),
                   ],
                 ),

@@ -19,6 +19,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
+  String _selectedRole = 'user'; // 'user' or 'staff'
 
   @override
   void dispose() {
@@ -59,6 +60,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
+      print('📝 Starting registration...');
       await ref
           .read(authProvider.notifier)
           .register(
@@ -66,15 +68,42 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             phone: _phoneController.text.trim(),
             email: _emailController.text.trim(),
             password: _passwordController.text,
+            role: _selectedRole,
           );
 
+      print('✅ Registration successful!');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Đăng ký thành công')));
-        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đăng ký thành công! Đang auto-login...'),
+          ),
+        );
+
+        // Auto-login after registration
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        if (mounted) {
+          try {
+            print('🔐 Auto-logging in after registration...');
+            await ref
+                .read(authProvider.notifier)
+                .login(
+                  email: _emailController.text.trim(),
+                  password: _passwordController.text,
+                );
+
+            print('✅ Auto-login successful!');
+            // MyApp will rebuild automatically due to authStateProvider watching
+          } catch (loginError) {
+            print('❌ Auto-login failed: $loginError');
+            if (mounted) {
+              Navigator.pop(context); // Go back to login
+            }
+          }
+        }
       }
     } catch (e) {
+      print('❌ Registration error: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -102,6 +131,87 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 24),
+
+                // Role Selection
+                const Text(
+                  'Chức vụ',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedRole = 'user'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: _selectedRole == 'user'
+                                  ? const Color(0xFF1B7A6B)
+                                  : Colors.grey.shade300,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            color: _selectedRole == 'user'
+                                ? const Color(0xFF1B7A6B).withOpacity(0.1)
+                                : Colors.transparent,
+                          ),
+                          child: Text(
+                            'Khách hàng',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: _selectedRole == 'user'
+                                  ? const Color(0xFF1B7A6B)
+                                  : Colors.grey,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedRole = 'staff'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: _selectedRole == 'staff'
+                                  ? const Color(0xFF1B7A6B)
+                                  : Colors.grey.shade300,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            color: _selectedRole == 'staff'
+                                ? const Color(0xFF1B7A6B).withOpacity(0.1)
+                                : Colors.transparent,
+                          ),
+                          child: Text(
+                            'Nhân viên',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: _selectedRole == 'staff'
+                                  ? const Color(0xFF1B7A6B)
+                                  : Colors.grey,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 24),
 
                 // Name Field

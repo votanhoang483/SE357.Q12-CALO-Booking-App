@@ -19,9 +19,10 @@ class AuthRepository {
     required String password,
     required String name,
     required String phone,
+    required String role, // 'user' or 'staff'
   }) async {
     try {
-      print('📝 Starting registration for: $email');
+      print('📝 Starting registration for: $email with role: $role');
       final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -39,10 +40,11 @@ class AuthRepository {
           'name': name,
           'phoneNumber': phone,
           'email': email,
+          'role': role,
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
-        print('✅ User document created successfully');
+        print('✅ User document created successfully with role: $role');
       }
 
       return userCredential;
