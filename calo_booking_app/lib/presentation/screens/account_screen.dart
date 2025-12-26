@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calo_booking_app/presentation/screens/booked_schedule_screen.dart';
 import 'package:calo_booking_app/presentation/screens/edit_profile_screen.dart';
+import 'package:calo_booking_app/presentation/screens/login_screen.dart';
 import 'package:calo_booking_app/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:calo_booking_app/presentation/viewmodels/user_viewmodel.dart';
 
@@ -19,6 +20,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   Widget build(BuildContext context) {
     final userDocAsync = ref.watch(currentUserDocProvider);
     final authRepository = ref.watch(authRepositoryProvider);
+    final screenContext = context; // Store screen context
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -231,7 +233,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 onTap: () {},
               ),
 
-
               // Edit Profile Button
               _buildMenuCard(
                 icon: Icons.edit,
@@ -250,7 +251,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: GestureDetector(
-                  onTap: _showLogoutDialog,
+                  onTap: () => _showLogoutDialog(screenContext),
                   child: _buildLogoutButton(),
                 ),
               ),
@@ -366,27 +367,49 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     );
   }
 
-  void _showLogoutDialog() {
+  void _showLogoutDialog(BuildContext screenContext) {
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: screenContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Đăng xuất'),
         content: const Text('Bạn có chắc chắn muốn đăng xuất không?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Không'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext); // Close dialog with dialog context
+
               try {
+                print('🔓 Logging out...');
                 await ref.read(authProvider.notifier).logout();
+
+                if (screenContext.mounted) {
+                  ScaffoldMessenger.of(screenContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Đã đăng xuất thành công'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                }
+
+                // Navigate to login after logout
+                if (screenContext.mounted) {
+                  await Future.delayed(const Duration(milliseconds: 800));
+                  Navigator.pushAndRemoveUntil(
+                    screenContext,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                }
               } catch (e) {
-                if (mounted) {
+                print('❌ Logout error: $e');
+                if (screenContext.mounted) {
                   ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+                    screenContext,
+                  ).showSnackBar(SnackBar(content: Text('Lỗi đăng xuất: $e')));
                 }
               }
             },
