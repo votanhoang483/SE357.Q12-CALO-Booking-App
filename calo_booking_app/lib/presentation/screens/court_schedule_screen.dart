@@ -1,5 +1,5 @@
 // CourtScheduleScreen
-// Purpose: Display court schedule for booking
+// Purpose: Display court schedule for booking with timeline view
 //
 // Inputs:
 // - CourtModel court
@@ -7,16 +7,15 @@
 // - CustomerType customerType
 //
 // UI:
-// - AppBar with title "Đặt lịch ngay trực quan"
-// - Date picker button
-// - Legend: Trống / Đã đặt / Khóa
-// - Time slot grid (rows = courts A,B,C,D; columns = time slots)
-// - Selectable available slots
+// - AppBar with date picker
+// - Info box with notice
+// - Timeline schedule with courts (Sân 1-4)
+// - Duration slider
+// - Total hours and price display
 // - Bottom button "TIẾP THEO"
 
 import 'package:calo_booking_app/data/models/court_model.dart';
 import 'package:calo_booking_app/presentation/screens/booking_confirmation_screen.dart';
-import 'package:calo_booking_app/presentation/widgets/court_schedule_grid.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_type_sheet.dart';
@@ -40,7 +39,17 @@ class CourtScheduleScreen extends StatefulWidget {
 
 class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
   DateTime _selectedDate = DateTime.now();
-  final Set<String> _selectedSlots = {}; // Format: "timeSlot-courtNumber"
+  // Format: {"court": "Sân 1", "startTime": "06:00", "endTime": "06:30", "startIndex": 0}
+  final Set<Map<String, dynamic>> _selectedSlots = {};
+  final List<String> _courtNames = ['Sân 1', 'Sân 2', 'Sân 3', 'Sân 4'];
+
+  // Mock data for booked slots: Map<courtName, List<bookedRanges>>
+  final Map<String, List<(int, int)>> _bookedSlots = {
+    'Sân 1': [(6, 8)], // 6:00-8:00
+    'Sân 2': [(5, 10)], // 5:00-10:00
+    'Sân 3': [],
+    'Sân 4': [(8, 12)], // 8:00-12:00
+  };
 
   List<String> _generateTimeSlots() {
     final List<String> timeSlots = [];
@@ -49,10 +58,6 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
       timeSlots.add('${hour.toString().padLeft(2, '0')}:30');
     }
     return timeSlots;
-  }
-
-  List<String> _generateCourtNumbers() {
-    return ['A', 'B', 'C', 'D'];
   }
 
   Future<void> _pickDate() async {
@@ -70,66 +75,184 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
     }
   }
 
+  int _getTotalMinutes() {
+    return _selectedSlots.length * 30;
+  }
+
+  int _getTotalPrice() {
+    final hours = _getTotalMinutes() / 60;
+    return (widget.court.pricePerHour * hours).toInt();
+  }
+
+  Widget _buildLegendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color,
+            border: Border.all(color: Colors.white24, width: 0.5),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final timeSlots = _generateTimeSlots();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Đặt lịch ngay trực quan'),
         backgroundColor: const Color(0xFF1B7A6B),
         elevation: 0,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    DateFormat('dd/MM/yyyy').format(_selectedDate),
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.calendar_today,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
       body: Column(
         children: [
+          // Date picker section
           Container(
+            color: const Color(0xFF1B7A6B),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Xem sân & bảng giá',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _pickDate,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          DateFormat('dd/MM/yyyy').format(_selectedDate),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.calendar_today,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Legend section
+          Container(
+            width: double.infinity,
             color: const Color(0xFF1B7A6B),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  LegendItem(color: Colors.white, label: 'Trống'),
+                  _buildLegendItem(Colors.white, 'Trống'),
                   const SizedBox(width: 16),
-                  LegendItem(color: Colors.red.shade700, label: 'Đã đặt'),
+                  _buildLegendItem(Colors.red.shade400, 'Đã đặt'),
                   const SizedBox(width: 16),
-                  LegendItem(color: Colors.grey.shade400, label: 'Khóa'),
+                  _buildLegendItem(Colors.grey.shade400, 'Khóa'),
                   const SizedBox(width: 16),
-                  LegendItem(color: Colors.purple.shade400, label: 'Sự kiện'),
+                  _buildLegendItem(Colors.green.shade300, 'Được chọn'),
                 ],
               ),
             ),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: _buildScheduleGrid(),
+
+          // Info box
+          Container(
+            margin: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(12.0),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              border: Border.all(color: Colors.blue.shade200),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Lưu ý: Nếu bạn cần đặt lịch có định vui lòng liên hệ: 0964.784.579 và 0332.858.359 để được hỗ trợ',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.blue.shade900,
+                height: 1.5,
+              ),
             ),
           ),
+
+          // Timeline schedule with fixed left column
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: _buildFixedColumnTimelineSchedule(timeSlots),
+            ),
+          ),
+
+          // Summary section
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.all(12.0),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1B7A6B),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Slot details
+                if (_selectedSlots.isNotEmpty)
+                  
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tổng giờ: ${_getTotalMinutes() ~/ 60}h ${_getTotalMinutes() % 60}m',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Tổng tiền: ${_getTotalPrice().toStringAsFixed(0)} đ',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // TIẾP THEO button
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: SizedBox(
@@ -139,15 +262,40 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
                 onPressed: _selectedSlots.isEmpty
                     ? null
                     : () {
+                        // Convert selected slots to list with details
+                        final List<Map<String, dynamic>> slotDetails =
+                            _selectedSlots.toList();
+
+                        // Convert to Set<String> for compatibility
+                        final Set<String> slotIds = _selectedSlots
+                            .map(
+                              (slot) =>
+                                  '${slot['court']}-${slot['startIndex']}',
+                            )
+                            .toSet();
+
+                        // Print details for debugging
+                        print('📅 Selected Slots Details:');
+                        for (var slot in _selectedSlots) {
+                          print(
+                            '  - ${slot['court']}: ${slot['startTime']} - ${slot['endTime']}',
+                          );
+                        }
+                        print(
+                          '📊 Total: ${_getTotalMinutes()} minutes, ${_getTotalPrice()} đ',
+                        );
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => BookingConfirmationScreen(
                               court: widget.court,
                               selectedDate: _selectedDate,
-                              selectedSlots: _selectedSlots,
+                              selectedSlots: slotIds,
                               bookingType: widget.bookingType,
-                              customerType: widget.customerType, user: null,
+                              customerType: widget.customerType,
+                              user: null,
+                              slotDetails: slotDetails, // Pass detailed slots
                             ),
                           ),
                         );
@@ -175,128 +323,163 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
     );
   }
 
-  Widget LegendItem({required Color color, required String label}) {
+  Widget _buildFixedColumnTimelineSchedule(List<String> timeSlots) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            color: color,
-            border: Border.all(color: Colors.white24, width: 0.5),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
-      ],
-    );
-  }
-
-  Widget _buildScheduleGrid() {
-    final timeSlots = _generateTimeSlots();
-    final courtNumbers = _generateCourtNumbers();
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: Table(
-          defaultColumnWidth: const FixedColumnWidth(80),
-          border: TableBorder.all(color: Colors.grey.shade300, width: 1),
+        // Fixed left column (court names)
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header row with court numbers
-            TableRow(
-              decoration: BoxDecoration(color: const Color(0xFF1B7A6B)),
-              children: [
-                _buildHeaderCell('Giờ'),
-                ...courtNumbers.map((court) => _buildHeaderCell(court)),
-              ],
+            const SizedBox(
+              width: 60,
+              height: 40,
+              child: Center(
+                child: Text(
+                  'Giờ',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
-            // Time slot rows
-            ...timeSlots.map((timeSlot) {
-              return TableRow(
-                children: [
-                  _buildTimeCell(timeSlot),
-                  ...courtNumbers.map((court) {
-                    final slotId = '$timeSlot-$court';
-                    final isSelected = _selectedSlots.contains(slotId);
-                    return _buildSelectableSlotCell(slotId, isSelected);
-                  }),
-                ],
+            ..._courtNames.map((court) {
+              return SizedBox(
+                width: 60,
+                height: 60,
+                child: Center(
+                  child: Text(
+                    court,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               );
             }),
           ],
         ),
-      ),
-    );
-  }
+        // Scrollable right section (time slots)
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Time header
+                Row(
+                  children: [
+                    ...timeSlots.map((time) {
+                      return SizedBox(
+                        width: 50,
+                        height: 40,
+                        child: Text(
+                          time,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+                // Court rows
+                ..._courtNames.map((court) {
+                  final bookedRanges = _bookedSlots[court] ?? [];
+                  return Row(
+                    children: [
+                      ...List.generate(timeSlots.length, (index) {
+                        final slotKey = '$court-$index';
+                        final isBooked = bookedRanges.any(
+                          (range) => index >= range.$1 && index < range.$2,
+                        );
+                        final isSelected = _selectedSlots.any(
+                          (slot) =>
+                              slot['court'] == court &&
+                              slot['startIndex'] == index,
+                        );
 
-  Widget _buildHeaderCell(String text) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      color: const Color(0xFF1B7A6B),
-      width: 80,
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
+                        // Calculate start and end time
+                        final startHour = 6 + (index ~/ 2);
+                        final startMin = (index % 2) * 30;
+                        final endHour = 6 + ((index + 1) ~/ 2);
+                        final endMin = ((index + 1) % 2) * 30;
 
-  Widget _buildTimeCell(String time) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      color: const Color(0xFFF5F5F5),
-      width: 80,
-      height: 50,
-      child: Text(
-        time,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontWeight: FontWeight.w500,
-          fontSize: 11,
-          color: Colors.black87,
-        ),
-      ),
-    );
-  }
+                        final startTime =
+                            '${startHour.toString().padLeft(2, '0')}:${startMin.toString().padLeft(2, '0')}';
+                        final endTime =
+                            '${endHour.toString().padLeft(2, '0')}:${endMin.toString().padLeft(2, '0')}';
 
-  Widget _buildSelectableSlotCell(String slotId, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          if (isSelected) {
-            _selectedSlots.remove(slotId);
-          } else {
-            _selectedSlots.add(slotId);
-          }
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        height: 50,
-        width: 80,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300, width: 1),
-          color: isSelected ? Colors.blue.shade400 : Colors.white,
-        ),
-        child: Center(
-          child: Text(
-            isSelected ? '✓' : '',
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+                        return GestureDetector(
+                          onTap: isBooked
+                              ? null
+                              : () {
+                                  setState(() {
+                                    final slotData = {
+                                      'court': court,
+                                      'startIndex': index,
+                                      'startTime': startTime,
+                                      'endTime': endTime,
+                                    };
+
+                                    // Kiểm tra nếu slot này đã được chọn
+                                    final existing = _selectedSlots.firstWhere(
+                                      (slot) =>
+                                          slot['court'] == court &&
+                                          slot['startIndex'] == index,
+                                      orElse: () => {},
+                                    );
+
+                                    if (existing.isNotEmpty) {
+                                      _selectedSlots.remove(existing);
+                                    } else {
+                                      _selectedSlots.add(slotData);
+                                    }
+                                  });
+                                },
+                          child: Container(
+                            width: 50,
+                            height: 60,
+                            margin: const EdgeInsets.only(right: 2),
+                            decoration: BoxDecoration(
+                              color: isBooked
+                                  ? Colors.red.shade400
+                                  : isSelected
+                                  ? Colors.green.shade300
+                                  : Colors.white,
+                              border: Border.all(
+                                color: Colors.grey.shade300,
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: isSelected
+                                ? const Center(
+                                    child: Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                        );
+                      }),
+                    ],
+                  );
+                }),
+              ],
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }

@@ -20,6 +20,8 @@ class PaymentScreen extends ConsumerStatefulWidget {
   final UserModel? user;
   final String orderId;
   final int totalPrice;
+  final int totalMinutes;
+  final List<Map<String, dynamic>>? slotDetails;
 
   const PaymentScreen({
     super.key,
@@ -31,6 +33,8 @@ class PaymentScreen extends ConsumerStatefulWidget {
     this.user,
     required this.orderId,
     required this.totalPrice,
+    required this.totalMinutes,
+    this.slotDetails,
   });
 
   @override
@@ -75,6 +79,64 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     final slots = widget.selectedSlots.toList()..sort();
     if (slots.isEmpty) return '';
     return slots.join(' | ');
+  }
+
+  String _formatSlotDetails() {
+    if (widget.slotDetails == null || widget.slotDetails!.isEmpty) {
+      return _formatSelectedSlots();
+    }
+
+    // Nhóm các slot liên tiếp cùng sân
+    Map<String, List<Map<String, dynamic>>> groupedByDay = {};
+
+    for (var slot in widget.slotDetails!) {
+      final key = slot['court'];
+      if (!groupedByDay.containsKey(key)) {
+        groupedByDay[key] = [];
+      }
+      groupedByDay[key]!.add(slot);
+    }
+
+    List<String> result = [];
+
+    groupedByDay.forEach((court, slots) {
+      // Sắp xếp theo startTime
+      slots.sort(
+        (a, b) => _timeToMinutes(
+          a['startTime'],
+        ).compareTo(_timeToMinutes(b['startTime'])),
+      );
+
+      List<MapEntry<String, String>> ranges = [];
+      String rangeStart = slots[0]['startTime'];
+      String rangeEnd = slots[0]['endTime'];
+
+      for (int i = 1; i < slots.length; i++) {
+        // Nếu slot tiếp theo liên tiếp (endTime của slot hiện tại = startTime của slot tiếp theo)
+        if (rangeEnd == slots[i]['startTime']) {
+          rangeEnd = slots[i]['endTime'];
+        } else {
+          // Lưu range hiện tại và bắt đầu range mới
+          ranges.add(MapEntry(rangeStart, rangeEnd));
+          rangeStart = slots[i]['startTime'];
+          rangeEnd = slots[i]['endTime'];
+        }
+      }
+      // Lưu range cuối cùng
+      ranges.add(MapEntry(rangeStart, rangeEnd));
+
+      // Tạo chuỗi hiển thị
+      for (var range in ranges) {
+        result.add('• $court: ${range.key} - ${range.value}');
+      }
+    });
+
+    return result.join('\n');
+  }
+
+  int _timeToMinutes(String time) {
+    final parts = time.split(':');
+    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
   }
 
   int _calculateDepositAmount() {
@@ -184,10 +246,18 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                               ).format(widget.selectedDate),
                               style: const TextStyle(fontSize: 13),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 8),
                             Text(
-                              '• ${_formatSelectedSlots()}',
-                              style: const TextStyle(fontSize: 13),
+                              _formatSlotDetails(),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Tổng: ${widget.totalMinutes} phút',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ],
                         ),
@@ -342,23 +412,43 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                       'courtId': widget.court.id,
                       'courtName': widget.court.name,
                       'status': 'Đã xác nhận',
-                      'courts': _formatSelectedSlots(),
+                      'slots': widget.slotDetails ?? [], // Lưu chi tiết slots
                       'date': DateFormat(
                         'dd/MM/yyyy',
                       ).format(widget.selectedDate),
                       'address': widget.court.location,
+                      'totalDuration':
+                          widget.selectedSlots.length * 30, // in minutes
                       'totalPrice': widget.totalPrice,
                       'depositPaid': _calculateDepositAmount(),
                       'orderId': widget.orderId,
                       'customerType': widget.customerType.toString(),
                       'bookingType': widget.bookingType.toString(),
-                      'userName': widget.user?.name ?? '',
-                      'userPhone': widget.user?.phoneNumber ?? '',
+                      'userName': userDocAsync.value?['name'] ?? '',
+                      'userPhone': userDocAsync.value?['phoneNumber'] ?? '',
                       'email': userEmail ?? '',
                     };
 
                     // Save booking to provider
                     ref.read(bookingsProvider.notifier).addBooking(newBooking);
+
+                    // Print details for debugging
+                    print('💾 Booking saved to Firebase:');
+                    print('  - Court: ${widget.court.name}');
+                    print(
+                      '  - Date: ${DateFormat('dd/MM/yyyy').format(widget.selectedDate)}',
+                    );
+                    print('  - Slots: ${widget.slotDetails?.length ?? 0}');
+                    if (widget.slotDetails != null) {
+                      for (var slot in widget.slotDetails!) {
+                        print(
+                          '    • ${slot['court']}: ${slot['startTime']} - ${slot['endTime']}',
+                        );
+                      }
+                    }
+                    print(
+                      '  - Total: ${widget.selectedSlots.length * 30} minutes, ${widget.totalPrice} đ',
+                    );
 
                     // Show success dialog
                     _showSuccessDialog(context);

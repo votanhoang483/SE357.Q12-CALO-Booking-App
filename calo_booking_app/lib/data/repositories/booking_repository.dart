@@ -5,6 +5,36 @@ class BookingRepository {
 
   BookingRepository(this._firestore);
 
+  // Create a new booking with detailed slot information
+  Future<String> createBookingWithSlots(
+    Map<String, dynamic> bookingData,
+    List<Map<String, dynamic>> slots,
+  ) async {
+    try {
+      print('💾 Creating booking with ${slots.length} slots');
+
+      final docRef = await _firestore.collection('bookings').add({
+        ...bookingData,
+        'slots': slots, // Lưu chi tiết từng slot
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Booking created with ID: ${docRef.id}');
+      print('📊 Slots saved:');
+      for (var slot in slots) {
+        print(
+          '  - ${slot['court']}: ${slot['startTime']} - ${slot['endTime']}',
+        );
+      }
+
+      return docRef.id;
+    } catch (e) {
+      print('❌ Error creating booking with slots: $e');
+      rethrow;
+    }
+  }
+
   // Create a new booking
   Future<String> createBooking(Map<String, dynamic> bookingData) async {
     try {
@@ -25,10 +55,7 @@ class BookingRepository {
     try {
       final doc = await _firestore.collection('bookings').doc(bookingId).get();
       if (doc.exists) {
-        return {
-          'id': doc.id,
-          ...doc.data() as Map<String, dynamic>,
-        };
+        return {'id': doc.id, ...doc.data() as Map<String, dynamic>};
       }
       return null;
     } catch (e) {
@@ -48,12 +75,9 @@ class BookingRepository {
           .get();
 
       print('✅ Found ${querySnapshot.docs.length} bookings for $userId');
-      
+
       return querySnapshot.docs.map((doc) {
-        return {
-          'id': doc.id,
-          ...doc.data(),
-        };
+        return {'id': doc.id, ...doc.data()};
       }).toList();
     } catch (e) {
       print('❌ Error fetching user bookings: $e');
@@ -70,10 +94,7 @@ class BookingRepository {
           .get();
 
       return querySnapshot.docs.map((doc) {
-        return {
-          'id': doc.id,
-          ...doc.data(),
-        };
+        return {'id': doc.id, ...doc.data()};
       }).toList();
     } catch (e) {
       print('Error fetching bookings: $e');
@@ -122,10 +143,7 @@ class BookingRepository {
           .get();
 
       return querySnapshot.docs.map((doc) {
-        return {
-          'id': doc.id,
-          ...doc.data(),
-        };
+        return {'id': doc.id, ...doc.data()};
       }).toList();
     } catch (e) {
       print('Error fetching court bookings: $e');

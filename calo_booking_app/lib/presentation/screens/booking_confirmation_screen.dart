@@ -15,6 +15,7 @@ class BookingConfirmationScreen extends ConsumerStatefulWidget {
   final BookingType bookingType;
   final CustomerType customerType;
   final UserModel? user;
+  final List<Map<String, dynamic>>? slotDetails;
 
   const BookingConfirmationScreen({
     super.key,
@@ -24,6 +25,7 @@ class BookingConfirmationScreen extends ConsumerStatefulWidget {
     required this.bookingType,
     required this.customerType,
     this.user,
+    this.slotDetails,
   });
 
   @override
@@ -33,18 +35,86 @@ class BookingConfirmationScreen extends ConsumerStatefulWidget {
 
 class _BookingConfirmationScreenState
     extends ConsumerState<BookingConfirmationScreen> {
+  int _calculateTotalMinutes() {
+    // Dùng slotDetails nếu có, nếu không thì dùng selectedSlots
+    if (widget.slotDetails != null && widget.slotDetails!.isNotEmpty) {
+      return widget.slotDetails!.length * 30;
+    }
+    return widget.selectedSlots.length * 30; // Mỗi slot 30 phút
+  }
 
   int _calculateTotalHours() {
-    return widget.selectedSlots.length ~/ 2; // Mỗi slot 30 phút
+    return _calculateTotalMinutes() ~/ 60;
   }
 
   int _calculateTotalPrice() {
-    return _calculateTotalHours() * widget.court.pricePerHour;
+    // Tính giá dựa trên thời gian thực
+    final totalMinutes = _calculateTotalMinutes();
+    final totalHours = totalMinutes / 60;
+    return (widget.court.pricePerHour * totalHours).toInt();
   }
 
   String _formatSelectedSlots() {
     final slots = widget.selectedSlots.toList()..sort();
     return slots.join(' | ');
+  }
+
+  String _formatSlotDetails() {
+    if (widget.slotDetails == null || widget.slotDetails!.isEmpty) {
+      return _formatSelectedSlots();
+    }
+
+    // Nhóm các slot liên tiếp cùng sân
+    Map<String, List<Map<String, dynamic>>> groupedByDay = {};
+
+    for (var slot in widget.slotDetails!) {
+      final key = slot['court'];
+      if (!groupedByDay.containsKey(key)) {
+        groupedByDay[key] = [];
+      }
+      groupedByDay[key]!.add(slot);
+    }
+
+    List<String> result = [];
+
+    groupedByDay.forEach((court, slots) {
+      // Sắp xếp theo startTime
+      slots.sort(
+        (a, b) => _timeToMinutes(
+          a['startTime'],
+        ).compareTo(_timeToMinutes(b['startTime'])),
+      );
+
+      List<MapEntry<String, String>> ranges = [];
+      String rangeStart = slots[0]['startTime'];
+      String rangeEnd = slots[0]['endTime'];
+
+      for (int i = 1; i < slots.length; i++) {
+        // Nếu slot tiếp theo liên tiếp (endTime của slot hiện tại = startTime của slot tiếp theo)
+        if (rangeEnd == slots[i]['startTime']) {
+          rangeEnd = slots[i]['endTime'];
+        } else {
+          // Lưu range hiện tại và bắt đầu range mới
+          ranges.add(MapEntry(rangeStart, rangeEnd));
+          rangeStart = slots[i]['startTime'];
+          rangeEnd = slots[i]['endTime'];
+        }
+      }
+      // Lưu range cuối cùng
+      ranges.add(MapEntry(rangeStart, rangeEnd));
+
+      // Tạo chuỗi hiển thị
+      for (var range in ranges) {
+        result.add('$court: ${range.key} - ${range.value}');
+      }
+    });
+
+    return result.join('\n');
+  }
+
+  int _timeToMinutes(String time) {
+    final parts = time.split(':');
+    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
   }
 
   @override
@@ -93,7 +163,7 @@ class _BookingConfirmationScreenState
                 _buildInfoItem(
                   icon: Icons.access_time,
                   title: 'Khung giờ',
-                  content: _formatSelectedSlots(),
+                  content: _formatSlotDetails(),
                 ),
                 _buildInfoItem(
                   icon: Icons.person,
@@ -103,9 +173,9 @@ class _BookingConfirmationScreenState
                 _buildInfoItem(
                   icon: Icons.schedule,
                   title: 'Tổng giờ',
-                  content: '${totalHours}h00',
+                  content: '${_calculateTotalMinutes()} phút',
                 ),
-                _buildPriceItem(totalPrice),
+                _buildPriceItem(_calculateTotalPrice()),
                 const SizedBox(height: 24),
 
                 // Customer Information Section
@@ -115,7 +185,7 @@ class _BookingConfirmationScreenState
                   data: (userDoc) {
                     final name = userDoc?['name'] ?? 'Chưa cập nhật';
                     final phone = userDoc?['phoneNumber'] ?? 'Chưa cập nhật';
-                    
+
                     return Column(
                       children: [
                         _buildInfoItem(
@@ -172,6 +242,7 @@ class _BookingConfirmationScreenState
                       final orderId =
                           '#${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
                       final totalPrice = _calculateTotalPrice();
+                      final totalMinutes = _calculateTotalMinutes();
 
                       Navigator.push(
                         context,
@@ -185,6 +256,8 @@ class _BookingConfirmationScreenState
                             user: widget.user,
                             orderId: orderId,
                             totalPrice: totalPrice,
+                            totalMinutes: totalMinutes,
+                            slotDetails: widget.slotDetails,
                           ),
                         ),
                       );
