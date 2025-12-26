@@ -119,7 +119,7 @@ class BookingDetailScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildDetailRow('Sân:', booking['courts']),
+                  _buildDetailRow('Thời gian:', _formatSlotDetails()),
                   const SizedBox(height: 12),
                   _buildDetailRow('Ngày:', booking['date']),
                   const SizedBox(height: 12),
@@ -457,13 +457,65 @@ class BookingDetailScreen extends ConsumerWidget {
     }
   }
 
-  String _formatPrice(dynamic price) {
-    int numPrice = 0;
-    if (price is int) {
-      numPrice = price;
-    } else if (price is double) {
-      numPrice = price.toInt();
+  String _formatSlotDetails() {
+    final slots = booking['slots'] as List<dynamic>?;
+    if (slots == null || slots.isEmpty) {
+      return 'Chưa có thông tin';
     }
-    return '${numPrice.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => '.')} đ';
+
+    // Convert to Map if needed and group by court
+    Map<String, List<Map<String, dynamic>>> groupedByDay = {};
+    
+    for (var slot in slots) {
+      final slotMap = Map<String, dynamic>.from(slot as Map);
+      final key = slotMap['court'];
+      if (!groupedByDay.containsKey(key)) {
+        groupedByDay[key] = [];
+      }
+      groupedByDay[key]!.add(slotMap);
+    }
+
+    List<String> result = [];
+    
+    groupedByDay.forEach((court, slotList) {
+      // Sort by startTime
+      slotList.sort((a, b) => _timeToMinutes(a['startTime'] as String)
+          .compareTo(_timeToMinutes(b['startTime'] as String)));
+      
+      List<MapEntry<String, String>> ranges = [];
+      String rangeStart = slotList[0]['startTime'] as String;
+      String rangeEnd = slotList[0]['endTime'] as String;
+      
+      for (int i = 1; i < slotList.length; i++) {
+        // If next slot is consecutive
+        if (rangeEnd == slotList[i]['startTime']) {
+          rangeEnd = slotList[i]['endTime'] as String;
+        } else {
+          // Save current range and start new one
+          ranges.add(MapEntry(rangeStart, rangeEnd));
+          rangeStart = slotList[i]['startTime'] as String;
+          rangeEnd = slotList[i]['endTime'] as String;
+        }
+      }
+      // Save last range
+      ranges.add(MapEntry(rangeStart, rangeEnd));
+      
+      // Create display string
+      for (var range in ranges) {
+        result.add('$court: ${range.key} - ${range.value}');
+      }
+    });
+
+    return result.join('\n');
+  }
+
+  int _timeToMinutes(String time) {
+    final parts = time.split(':');
+    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
+  }
+
+  String _formatPrice(dynamic price) {
+    final amount = price is int ? price : (price as num?)?.toInt() ?? 0;
+    return '${amount.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ',')} đ';
   }
 }

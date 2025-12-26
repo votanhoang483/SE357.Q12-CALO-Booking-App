@@ -7,6 +7,7 @@ import 'package:calo_booking_app/presentation/widgets/booking_target_sheet.dart'
 import 'package:calo_booking_app/presentation/viewmodels/bookings_viewmodel.dart';
 import 'package:calo_booking_app/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:calo_booking_app/presentation/viewmodels/user_viewmodel.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -22,6 +23,7 @@ class PaymentScreen extends ConsumerStatefulWidget {
   final int totalPrice;
   final int totalMinutes;
   final List<Map<String, dynamic>>? slotDetails;
+  final String? bookingId; // Draft booking ID to update
 
   const PaymentScreen({
     super.key,
@@ -35,6 +37,7 @@ class PaymentScreen extends ConsumerStatefulWidget {
     required this.totalPrice,
     required this.totalMinutes,
     this.slotDetails,
+    this.bookingId,
   });
 
   @override
@@ -393,7 +396,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     // Get current user ID and email
                     final authRepository = ref.read(authRepositoryProvider);
                     final userId = authRepository.currentUserId;
@@ -406,47 +409,64 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                       return;
                     }
 
-                    // Create booking object with user info
-                    final newBooking = {
-                      'userId': userId,
-                      'courtId': widget.court.id,
-                      'courtName': widget.court.name,
-                      'status': 'Đã xác nhận',
-                      'slots': widget.slotDetails ?? [], // Lưu chi tiết slots
-                      'date': DateFormat(
-                        'dd/MM/yyyy',
-                      ).format(widget.selectedDate),
-                      'address': widget.court.location,
-                      'totalDuration':
-                          widget.selectedSlots.length * 30, // in minutes
-                      'totalPrice': widget.totalPrice,
-                      'depositPaid': _calculateDepositAmount(),
-                      'orderId': widget.orderId,
-                      'customerType': widget.customerType.toString(),
-                      'bookingType': widget.bookingType.toString(),
-                      'userName': userDocAsync.value?['name'] ?? '',
-                      'userPhone': userDocAsync.value?['phoneNumber'] ?? '',
-                      'email': userEmail ?? '',
-                    };
+                    try {
+                      // If booking ID exists (draft booking), update it
+                      if (widget.bookingId != null) {
+                        final firestore = FirebaseFirestore.instance;
+                        await firestore
+                            .collection('bookings')
+                            .doc(widget.bookingId)
+                            .update({
+                          'userId': userId,
+                          'status': 'Đã xác nhận', // Update status from "Chờ thanh toán" to "Đã xác nhận"
+                          'userName': userDocAsync.value?['name'] ?? '',
+                          'userPhone': userDocAsync.value?['phoneNumber'] ?? '',
+                          'email': userEmail ?? '',
+                          'depositPaid': _calculateDepositAmount(),
+                          'updatedAt': FieldValue.serverTimestamp(),
+                        });
 
-                    // Save booking to provider
-                    ref.read(bookingsProvider.notifier).addBooking(newBooking);
+                        print('✅ Booking confirmed (updated): ${widget.bookingId}');
+                      } else {
+                        // Fallback: Create new booking if no draft ID
+                        final newBooking = {
+                          'userId': userId,
+                          'courtId': widget.court.id,
+                          'courtName': widget.court.name,
+                          'status': 'Đã xác nhận',
+                          'slots': widget.slotDetails ?? [],
+                          'date': DateFormat(
+                            'dd/MM/yyyy',
+                          ).format(widget.selectedDate),
+                          'address': widget.court.location,
+                          'totalDuration': widget.totalMinutes,
+                          'totalPrice': widget.totalPrice,
+                          'depositPaid': _calculateDepositAmount(),
+                          'orderId': widget.orderId,
+                          'customerType': widget.customerType.toString(),
+                          'bookingType': widget.bookingType.toString(),
+                          'userName': userDocAsync.value?['name'] ?? '',
+                          'userPhone': userDocAsync.value?['phoneNumber'] ?? '',
+                          'email': userEmail ?? '',
+                        };
 
-                    // Print details for debugging
-                    print('💾 Booking saved to Firebase:');
-                    print('  - Court: ${widget.court.name}');
-                    print(
-                      '  - Date: ${DateFormat('dd/MM/yyyy').format(widget.selectedDate)}',
-                    );
-                    print('  - Slots: ${widget.slotDetails?.length ?? 0}');
-                    if (widget.slotDetails != null) {
-                      for (var slot in widget.slotDetails!) {
-                        print(
-                          '    • ${slot['court']}: ${slot['startTime']} - ${slot['endTime']}',
+                        ref.read(bookingsProvider.notifier).addBooking(newBooking);
+                        print('💾 Booking created (new)');
+                      }
+
+                      // Show success dialog
+                      if (context.mounted) {
+                        _showSuccessDialog(context);
+                      }
+                    } catch (e) {
+                      print('❌ Error confirming booking: $e');
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Lỗi: $e')),
                         );
                       }
                     }
-                    print(
+                  },
                       '  - Total: ${widget.selectedSlots.length * 30} minutes, ${widget.totalPrice} đ',
                     );
 
@@ -587,10 +607,24 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               const SizedBox(height: 16),
 
               // Booking Details
-              Text(
-                'Bạn đã đặt thành công sân ${_formatSelectedSlots()} ngày ${DateFormat('dd/MM/yyyy').format(widget.selectedDate)}',
-                style: const TextStyle(fontSize: 14, color: Colors.black87),
-                textAlign: TextAlign.center,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ngày: ${DateFormat('dd/MM/yyyy').format(widget.selectedDate)}',
+                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Sân được chọn:',
+                    style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatSlotDetails(),
+                    style: const TextStyle(fontSize: 12, color: Colors.black87),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
 

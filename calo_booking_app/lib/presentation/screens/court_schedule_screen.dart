@@ -16,7 +16,10 @@
 
 import 'package:calo_booking_app/data/models/court_model.dart';
 import 'package:calo_booking_app/presentation/screens/booking_confirmation_screen.dart';
+import 'package:calo_booking_app/presentation/viewmodels/bookings_viewmodel.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_type_sheet.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_target_sheet.dart';
@@ -43,13 +46,14 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
   final Set<Map<String, dynamic>> _selectedSlots = {};
   final List<String> _courtNames = ['Sân 1', 'Sân 2', 'Sân 3', 'Sân 4'];
 
-  // Mock data for booked slots: Map<courtName, List<bookedRanges>>
-  final Map<String, List<(int, int)>> _bookedSlots = {
-    'Sân 1': [(6, 8)], // 6:00-8:00
-    'Sân 2': [(5, 10)], // 5:00-10:00
+  // Booked slots từ Firestore: Map<courtName, List<bookedRanges>>
+  Map<String, List<(int, int)>> _bookedSlots = {
+    'Sân 1': [],
+    'Sân 2': [],
     'Sân 3': [],
-    'Sân 4': [(8, 12)], // 8:00-12:00
+    'Sân 4': [],
   };
+  bool _isLoadingSlots = false;
 
   List<String> _generateTimeSlots() {
     final List<String> timeSlots = [];
@@ -60,17 +64,155 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
     return timeSlots;
   }
 
+  @override
+  void initState() {
+    super.initState();
+    // Load bookings for today when screen initializes
+    _loadBookedSlotsForDate(_selectedDate);
+  }
+
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
+    final pickedDate = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 30)),
     );
 
-    if (picked != null && picked != _selectedDate) {
+    if (pickedDate != null && pickedDate != _selectedDate) {
       setState(() {
-        _selectedDate = picked;
+        _selectedDate = pickedDate;
+        _selectedSlots.clear();
+      });
+      await _loadBookedSlotsForDate(pickedDate);
+    }
+  }
+
+  // Load booked slots từ Firestore cho một ngày cụ thể
+  Future<void> _loadBookedSlotsForDate(DateTime date) async {
+    setState(() {
+      _isLoadingSlots = true;
+    });
+
+    try {
+      final dateString = DateFormat('dd/MM/yyyy').format(date);
+      print('📅 Loading booked slots for: $dateString');
+
+      // Query bookings collection for this date
+      final firestore = FirebaseFirestore.instance;
+      final now = Timestamp.now();
+      
+      // Get all bookings for this date that are either confirmed or not expired
+      final bookingsSnapshot = await firestore
+          .collection('bookings')
+          .where('date', isEqualTo: dateString)
+          .get();
+
+      // Filter: include confirmed bookings + non-expired draft bookings
+      final validBookings = bookingsSnapshot.docs.where((doc) {
+        final booking = doc.data();
+        final status = booking['status'] as String?;
+        final expiresAt = booking['expiresAt'] as Timestamp?;
+
+        // Include if confirmed
+        if (status == 'Đã xác nhận') {
+          return true;
+        }
+
+        // Include if draft and not expired
+        if (status == 'Chờ thanh toán') {
+          if (expiresAt != null && now.toDate().isBefore(expiresAt.toDate())) {
+            return true; // Not expired
+          } else if (expiresAt != null) {
+            // Expired draft - delete it
+            firestore.collection('bookings').doc(doc.id).delete();
+            print('🗑️ Deleted expired draft booking: ${doc.id}');
+            return false;
+          }
+          return false;
+        }
+
+        return false;
+      }).toList();
+
+      print(
+        '📊 Found ${validBookings.length} valid bookings for $dateString',
+      );
+
+      // Reset booked slots
+      Map<String, Set<int>> bookedIndices = {
+        'Sân 1': {},
+        'Sân 2': {},
+        'Sân 3': {},
+        'Sân 4': {},
+      };
+
+      // Extract booked slots from bookings
+      for (var doc in validBookings) {
+        final booking = doc.data();
+        final slots = booking['slots'] as List<dynamic>?;
+
+        if (slots != null) {
+          for (var slot in slots) {
+            final slotMap = slot is Map
+                ? Map<String, dynamic>.from(slot)
+                : null;
+            if (slotMap != null) {
+              final court = slotMap['court'] as String?;
+              final startIndex = slotMap['startIndex'] as int?;
+
+              if (court != null &&
+                  startIndex != null &&
+                  bookedIndices.containsKey(court)) {
+                bookedIndices[court]!.add(startIndex);
+              }
+            }
+          }
+        }
+      }
+
+      // Convert Set<int> to List<(int, int)> format (ranges)
+      final convertedSlots = <String, List<(int, int)>>{};
+      bookedIndices.forEach((court, indices) {
+        if (indices.isEmpty) {
+          convertedSlots[court] = [];
+        } else {
+          final sortedIndices = indices.toList()..sort();
+          final ranges = <(int, int)>[];
+
+          int rangeStart = sortedIndices[0];
+          int rangeEnd = sortedIndices[0] + 1;
+
+          for (int i = 1; i < sortedIndices.length; i++) {
+            if (sortedIndices[i] == rangeEnd) {
+              // Consecutive, extend range
+              rangeEnd = sortedIndices[i] + 1;
+            } else {
+              // Gap, save range and start new one
+              ranges.add((rangeStart, rangeEnd));
+              rangeStart = sortedIndices[i];
+              rangeEnd = sortedIndices[i] + 1;
+            }
+          }
+          // Save last range
+          ranges.add((rangeStart, rangeEnd));
+          convertedSlots[court] = ranges;
+        }
+      });
+
+      setState(() {
+        _bookedSlots = convertedSlots;
+        print('✅ Booked slots loaded:');
+        convertedSlots.forEach((court, ranges) {
+          print('  $court: $ranges');
+        });
+      });
+    } catch (e) {
+      print('❌ Error loading booked slots: $e');
+      // Keep existing slots on error
+    } finally {
+      setState(() {
+        _isLoadingSlots = false;
       });
     }
   }
@@ -101,6 +243,49 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
         Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
       ],
     );
+  }
+
+  // Create draft booking (status: "Chờ thanh toán")
+  Future<String?> _createDraftBooking(
+    Set<String> slotIds,
+    List<Map<String, dynamic>> slotDetails,
+  ) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final orderId =
+          '#${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
+      final now = DateTime.now();
+      final expiresAt = now.add(const Duration(minutes: 5)); // Expire after 5 minutes
+
+      final draftBooking = {
+        'userId': 'temp_user', // Sẽ update khi có user info
+        'courtId': widget.court.id,
+        'courtName': widget.court.name,
+        'address': widget.court.location,
+        'date': DateFormat('dd/MM/yyyy').format(_selectedDate),
+        'status': 'Chờ thanh toán', // Draft status
+        'slots': slotDetails,
+        'totalDuration': slotDetails.length * 30,
+        'totalPrice': _getTotalPrice(),
+        'orderId': orderId,
+        'customerType': widget.customerType.toString(),
+        'bookingType': widget.bookingType.toString(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'expiresAt': Timestamp.fromDate(expiresAt), // Auto-expire after 5 minutes
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      final docRef = await firestore.collection('bookings').add(draftBooking);
+      print('✅ Draft booking created with ID: ${docRef.id}');
+      print('⏰ Will expire at: ${expiresAt.toIso8601String()}');
+      return docRef.id;
+    } catch (e) {
+      print('❌ Error creating draft booking: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e')),
+      );
+      return null;
+    }
   }
 
   @override
@@ -203,10 +388,18 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
 
           // Timeline schedule with fixed left column
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: _buildFixedColumnTimelineSchedule(timeSlots),
-            ),
+            child: _isLoadingSlots
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFF1B7A6B),
+                      ),
+                    ),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: _buildFixedColumnTimelineSchedule(timeSlots),
+                  ),
           ),
 
           // Summary section
@@ -222,32 +415,31 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
               children: [
                 // Slot details
                 if (_selectedSlots.isNotEmpty)
-                  
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tổng giờ: ${_getTotalMinutes() ~/ 60}h ${_getTotalMinutes() % 60}m',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white70,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Tổng giờ: ${_getTotalMinutes() ~/ 60}h ${_getTotalMinutes() % 60}m',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.white70,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      'Tổng tiền: ${_getTotalPrice().toStringAsFixed(0)} đ',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        ],
                       ),
-                    ),
-                  ],
-                ),
+                      Text(
+                        'Tổng tiền: ${_getTotalPrice().toStringAsFixed(0)} đ',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -261,7 +453,7 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
               child: ElevatedButton(
                 onPressed: _selectedSlots.isEmpty
                     ? null
-                    : () {
+                    : () async {
                         // Convert selected slots to list with details
                         final List<Map<String, dynamic>> slotDetails =
                             _selectedSlots.toList();
@@ -285,20 +477,33 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
                           '📊 Total: ${_getTotalMinutes()} minutes, ${_getTotalPrice()} đ',
                         );
 
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BookingConfirmationScreen(
-                              court: widget.court,
-                              selectedDate: _selectedDate,
-                              selectedSlots: slotIds,
-                              bookingType: widget.bookingType,
-                              customerType: widget.customerType,
-                              user: null,
-                              slotDetails: slotDetails, // Pass detailed slots
+                        // Create draft booking (status: "Chờ thanh toán")
+                        final bookingId = await _createDraftBooking(slotIds, slotDetails);
+                        
+                        if (bookingId == null) {
+                          return; // Error creating draft booking
+                        }
+
+                        // Reload booked slots to show the new draft booking
+                        await _loadBookedSlotsForDate(_selectedDate);
+
+                        if (context.mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BookingConfirmationScreen(
+                                court: widget.court,
+                                selectedDate: _selectedDate,
+                                selectedSlots: slotIds,
+                                bookingType: widget.bookingType,
+                                customerType: widget.customerType,
+                                user: null,
+                                slotDetails: slotDetails,
+                                bookingId: bookingId, // Pass booking ID for update later
+                              ),
                             ),
-                          ),
-                        );
+                          );
+                        }
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFD4A820),

@@ -16,6 +16,7 @@ class BookingConfirmationScreen extends ConsumerStatefulWidget {
   final CustomerType customerType;
   final UserModel? user;
   final List<Map<String, dynamic>>? slotDetails;
+  final String? bookingId; // Draft booking ID
 
   const BookingConfirmationScreen({
     super.key,
@@ -26,6 +27,7 @@ class BookingConfirmationScreen extends ConsumerStatefulWidget {
     required this.customerType,
     this.user,
     this.slotDetails,
+    this.bookingId,
   });
 
   @override
@@ -258,6 +260,7 @@ class _BookingConfirmationScreenState
                             totalPrice: totalPrice,
                             totalMinutes: totalMinutes,
                             slotDetails: widget.slotDetails,
+                            bookingId: widget.bookingId, // Pass draft booking ID
                           ),
                         ),
                       );
