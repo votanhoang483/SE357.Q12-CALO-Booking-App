@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calo_booking_app/presentation/viewmodels/auth_viewmodel.dart';
-import 'package:calo_booking_app/presentation/screens/login_screen.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});

@@ -22,7 +22,7 @@ class CourtRepository {
 
 
     return querySnapshot.docs.map((doc) {
-      return CourtModel.fromFirestore(doc.data() as Map<String, dynamic>, doc.id);
+      return CourtModel.fromFirestore(doc.data(), doc.id);
     }).toList();
   }
 }

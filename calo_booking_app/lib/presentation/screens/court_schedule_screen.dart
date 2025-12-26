@@ -1,25 +1,7 @@
-// CourtScheduleScreen
-// Purpose: Display court schedule for booking with timeline view
-//
-// Inputs:
-// - CourtModel court
-// - BookingType bookingType
-// - CustomerType customerType
-//
-// UI:
-// - AppBar with date picker
-// - Info box with notice
-// - Timeline schedule with courts (Sân 1-4)
-// - Duration slider
-// - Total hours and price display
-// - Bottom button "TIẾP THEO"
-
 import 'package:calo_booking_app/data/models/court_model.dart';
 import 'package:calo_booking_app/presentation/screens/booking_confirmation_screen.dart';
-import 'package:calo_booking_app/presentation/viewmodels/bookings_viewmodel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_type_sheet.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_target_sheet.dart';
@@ -632,7 +614,6 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
                   return Row(
                     children: [
                       ...List.generate(timeSlots.length, (index) {
-                        final slotKey = '$court-$index';
                         final isBooked = bookedRanges.any(
                           (range) => index >= range.$1 && index < range.$2,
                         );

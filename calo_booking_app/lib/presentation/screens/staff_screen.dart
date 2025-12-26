@@ -32,7 +32,6 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
   Widget build(BuildContext context) {
     final bookingsAsync = ref.watch(bookingsProvider);
     final userDoc = ref.watch(currentUserDocProvider);
-    final screenContext = context;
 
     return Scaffold(
       appBar: AppBar(

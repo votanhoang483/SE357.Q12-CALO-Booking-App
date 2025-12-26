@@ -1,22 +1,8 @@
-// CourtDetailScreen
-// Purpose: Display detailed information of a badminton court
-//
-// Input:
-// - CourtModel court
-//
-// UI:
-// - AppBar with court name
-// - Court name (large, bold)
-// - Location
-// - Price per hour
-// - Status (Active / Inactive)
-// - Button: "View Schedule"
 
 import 'package:calo_booking_app/data/models/court_model.dart';
 import 'package:calo_booking_app/presentation/screens/court_schedule_screen.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_target_sheet.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_type_sheet.dart';
-import 'package:calo_booking_app/presentation/widgets/court_schedule_grid.dart';
 import 'package:flutter/material.dart';
 
 class CourtDetailScreen extends StatelessWidget {

@@ -1,5 +1,4 @@
 import 'package:calo_booking_app/data/models/court_model.dart';
-import 'package:calo_booking_app/presentation/screens/court_detail_screen.dart';
 import 'package:calo_booking_app/presentation/screens/account_screen.dart';
 import 'package:calo_booking_app/presentation/screens/court_schedule_screen.dart';
 import 'package:calo_booking_app/presentation/screens/map_screen.dart';
@@ -33,10 +32,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(bookingsProvider.notifier).loadAllBookings();
     });
-  }
-
-  String _getUserName() {
-    return 'Võ Tân Hoàng';
   }
 
   String _getCurrentDateTime() {

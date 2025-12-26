@@ -68,16 +68,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
 
       // Update user document in Firestore
-      print('🔥 Updating Firestore...');
       await authRepository.updateUserDocument(userId, {
         'name': _nameController.text.trim(),
         'phoneNumber': _phoneController.text.trim(),
       });
 
-      print('✅ Update successful!');
 
-      // Refresh user data từ Firestore
-      print('🔄 Refreshing user data...');
       ref.refresh(currentUserDocProvider);
 
       if (mounted) {

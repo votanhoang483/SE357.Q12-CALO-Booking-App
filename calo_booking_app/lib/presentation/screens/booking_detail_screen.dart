@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calo_booking_app/presentation/viewmodels/bookings_viewmodel.dart';
-import 'package:calo_booking_app/presentation/screens/booked_schedule_screen.dart';
 
 class BookingDetailScreen extends ConsumerWidget {
   final Map<String, dynamic> booking;

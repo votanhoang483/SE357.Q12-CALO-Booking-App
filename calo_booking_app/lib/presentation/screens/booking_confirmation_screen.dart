@@ -45,10 +45,6 @@ class _BookingConfirmationScreenState
     return widget.selectedSlots.length * 30; // Mỗi slot 30 phút
   }
 
-  int _calculateTotalHours() {
-    return _calculateTotalMinutes() ~/ 60;
-  }
-
   int _calculateTotalPrice() {
     // Tính giá dựa trên thời gian thực
     final totalMinutes = _calculateTotalMinutes();
@@ -121,8 +117,6 @@ class _BookingConfirmationScreenState
 
   @override
   Widget build(BuildContext context) {
-    final totalHours = _calculateTotalHours();
-    final totalPrice = _calculateTotalPrice();
     final userDocAsync = ref.watch(currentUserDocProvider);
 
     return Scaffold(
@@ -374,47 +368,6 @@ class _BookingConfirmationScreenState
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildFormField({
-    required String label,
-    required TextEditingController controller,
-    required String hint,
-    TextInputType inputType = TextInputType.text,
-    bool readOnly = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: inputType,
-          readOnly: readOnly,
-          decoration: InputDecoration(
-            hintText: hint,
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(6),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
-          ),
-        ),
-      ],
     );
   }
 
