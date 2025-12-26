@@ -3,10 +3,12 @@ import 'package:calo_booking_app/data/models/user_model.dart';
 import 'package:calo_booking_app/presentation/screens/payment_screen.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_type_sheet.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_target_sheet.dart';
+import 'package:calo_booking_app/presentation/viewmodels/user_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-class BookingConfirmationScreen extends StatefulWidget {
+class BookingConfirmationScreen extends ConsumerStatefulWidget {
   final CourtModel court;
   final DateTime selectedDate;
   final Set<String> selectedSlots;
@@ -25,31 +27,12 @@ class BookingConfirmationScreen extends StatefulWidget {
   });
 
   @override
-  State<BookingConfirmationScreen> createState() =>
+  ConsumerState<BookingConfirmationScreen> createState() =>
       _BookingConfirmationScreenState();
 }
 
-class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
-  late TextEditingController _nameController;
-  late TextEditingController _phoneController;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(
-      text: widget.user?.name ?? 'Võ Tấn Hoàng',
-    );
-    _phoneController = TextEditingController(
-      text: widget.user?.phoneNumber ?? '0961759953',
-    );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-    super.dispose();
-  }
+class _BookingConfirmationScreenState
+    extends ConsumerState<BookingConfirmationScreen> {
 
   int _calculateTotalHours() {
     return widget.selectedSlots.length ~/ 2; // Mỗi slot 30 phút
@@ -68,6 +51,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
   Widget build(BuildContext context) {
     final totalHours = _calculateTotalHours();
     final totalPrice = _calculateTotalPrice();
+    final userDocAsync = ref.watch(currentUserDocProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -125,19 +109,56 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 const SizedBox(height: 24),
 
                 // Customer Information Section
-                _buildFormField(
-                  label: 'TÊN CỦA BẠN',
-                  controller: _nameController,
-                  hint: 'Nhập tên của bạn',
-                  readOnly: true,
-                ),
-                const SizedBox(height: 16),
-                _buildFormField(
-                  label: 'SỐ ĐIỆN THOẠI',
-                  controller: _phoneController,
-                  hint: 'Nhập số điện thoại',
-                  inputType: TextInputType.phone,
-                  readOnly: true,
+                _buildSectionTitle('Thông tin khách hàng'),
+                const SizedBox(height: 12),
+                userDocAsync.when(
+                  data: (userDoc) {
+                    final name = userDoc?['name'] ?? 'Chưa cập nhật';
+                    final phone = userDoc?['phoneNumber'] ?? 'Chưa cập nhật';
+                    
+                    return Column(
+                      children: [
+                        _buildInfoItem(
+                          icon: Icons.person,
+                          title: 'Tên của bạn',
+                          content: name,
+                        ),
+                        _buildInfoItem(
+                          icon: Icons.phone,
+                          title: 'Số điện thoại',
+                          content: phone,
+                        ),
+                      ],
+                    );
+                  },
+                  loading: () => Column(
+                    children: [
+                      _buildInfoItem(
+                        icon: Icons.person,
+                        title: 'Tên của bạn',
+                        content: 'Đang tải...',
+                      ),
+                      _buildInfoItem(
+                        icon: Icons.phone,
+                        title: 'Số điện thoại',
+                        content: 'Đang tải...',
+                      ),
+                    ],
+                  ),
+                  error: (_, __) => Column(
+                    children: [
+                      _buildInfoItem(
+                        icon: Icons.person,
+                        title: 'Tên của bạn',
+                        content: 'Lỗi tải dữ liệu',
+                      ),
+                      _buildInfoItem(
+                        icon: Icons.phone,
+                        title: 'Số điện thoại',
+                        content: 'Lỗi tải dữ liệu',
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 32),
 
@@ -147,15 +168,6 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                   height: 48,
                   child: ElevatedButton(
                     onPressed: () {
-                      if (_nameController.text.isEmpty ||
-                          _phoneController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Vui lòng nhập đầy đủ thông tin'),
-                          ),
-                        );
-                        return;
-                      }
                       // Generate order ID
                       final orderId =
                           '#${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';

@@ -5,6 +5,7 @@ import 'package:calo_booking_app/presentation/screens/map_screen.dart';
 import 'package:calo_booking_app/presentation/screens/notification_screen.dart';
 import 'package:calo_booking_app/presentation/viewmodels/search_court_viewmodel.dart';
 import 'package:calo_booking_app/presentation/viewmodels/bookings_viewmodel.dart';
+import 'package:calo_booking_app/presentation/viewmodels/user_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -54,6 +55,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     // Watch courts from Riverpod provider
     final courtsState = ref.watch(searchCourtViewModelProvider);
+    final userNameAsync = ref.watch(currentUserNameProvider);
 
     // Show different screens based on selected nav index
     switch (_selectedNavIndex) {
@@ -121,12 +123,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                _getUserName(),
-                                style: const TextStyle(
-                                  color: Color(0xFFD4A820),
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                              userNameAsync.when(
+                                data: (name) => Text(
+                                  name ?? 'Xin chào',
+                                  style: const TextStyle(
+                                    color: Color(0xFFD4A820),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                loading: () => const Text(
+                                  'Đang tải...',
+                                  style: TextStyle(
+                                    color: Color(0xFFD4A820),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                error: (_, __) => const Text(
+                                  'Xin chào',
+                                  style: TextStyle(
+                                    color: Color(0xFFD4A820),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ],

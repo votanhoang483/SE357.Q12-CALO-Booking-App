@@ -1,9 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthRepository {
   final FirebaseAuth _firebaseAuth;
+  final FirebaseFirestore _firestore;
 
-  AuthRepository(this._firebaseAuth);
+  AuthRepository(this._firebaseAuth, this._firestore);
 
   // Get current user
   User? get currentUser => _firebaseAuth.currentUser;
@@ -18,6 +20,7 @@ class AuthRepository {
     required String name,
   }) async {
     try {
+      print('📝 Starting registration for: $email');
       final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -26,9 +29,22 @@ class AuthRepository {
       // Update user profile with name
       await userCredential.user?.updateDisplayName(name);
 
+      // Create user document in Firestore
+      if (userCredential.user != null) {
+        print('💾 Creating user document in Firestore for: ${userCredential.user!.uid}');
+        await _firestore.collection('users').doc(userCredential.user!.uid).set({
+          'name': name,
+          'email': email,
+          'phoneNumber': '',
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        print('✅ User document created successfully');
+      }
+
       return userCredential;
     } catch (e) {
-      print('Error registering: $e');
+      print('❌ Error registering: $e');
       rethrow;
     }
   }
@@ -71,4 +87,34 @@ class AuthRepository {
 
   // Get current user UID
   String? get currentUserId => _firebaseAuth.currentUser?.uid;
+
+  // Get user document from Firestore
+  Future<Map<String, dynamic>?> getUserDocument(String userId) async {
+    try {
+      final doc = await _firestore.collection('users').doc(userId).get();
+      if (doc.exists) {
+        return {
+          'id': doc.id,
+          ...doc.data() as Map<String, dynamic>,
+        };
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching user document: $e');
+      return null;
+    }
+  }
+
+  // Update user document
+  Future<void> updateUserDocument(String userId, Map<String, dynamic> data) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        ...data,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Error updating user document: $e');
+      rethrow;
+    }
+  }
 }

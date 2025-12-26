@@ -1,11 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:calo_booking_app/data/repositories/auth_repository.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 // Provider for AuthRepository
 final authRepositoryProvider = Provider((ref) {
-  return AuthRepository(FirebaseAuth.instance);
+  return AuthRepository(
+    FirebaseAuth.instance,
+    FirebaseFirestore.instance,
+  );
 });
 
 // Provider for current user (stream)

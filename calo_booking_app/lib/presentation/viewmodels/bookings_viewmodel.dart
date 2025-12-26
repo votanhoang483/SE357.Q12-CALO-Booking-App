@@ -37,10 +37,12 @@ class BookingsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
   // Load user bookings from Firestore
   Future<void> loadUserBookings(String userId) async {
     try {
+      print('📋 loadUserBookings called for userId: $userId');
       final bookings = await _bookingRepository.getUserBookings(userId);
+      print('📊 Setting state with ${bookings.length} bookings');
       state = bookings;
     } catch (e) {
-      print('Error loading bookings: $e');
+      print('❌ Error loading bookings: $e');
       rethrow;
     }
   }

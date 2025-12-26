@@ -5,6 +5,8 @@ import 'package:calo_booking_app/presentation/screens/home_screen.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_type_sheet.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_target_sheet.dart';
 import 'package:calo_booking_app/presentation/viewmodels/bookings_viewmodel.dart';
+import 'package:calo_booking_app/presentation/viewmodels/auth_viewmodel.dart';
+import 'package:calo_booking_app/presentation/viewmodels/user_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -82,8 +84,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   @override
   Widget build(BuildContext context) {
     final depositAmount = _calculateDepositAmount();
-    final userName = widget.user?.name ?? 'Võ Tấn Hoàng';
-    final phoneNumber = widget.user?.phoneNumber ?? '0961759953';
+    final userDocAsync = ref.watch(currentUserDocProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -110,12 +111,65 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     children: [
                       _buildCardTitle('Thông tin lịch đặt'),
                       const SizedBox(height: 16),
-                      _buildInfoRow('Tên', userName, isHighlight: true),
-                      _buildInfoRow('SDT', phoneNumber, isHighlight: true),
-                      _buildInfoRow(
-                        'Mã đơn',
-                        widget.orderId,
-                        isHighlight: true,
+                      userDocAsync.when(
+                        data: (userDoc) {
+                          final userName = userDoc?['name'] ?? '';
+                          final phoneNumber = userDoc?['phoneNumber'] ?? '';
+
+                          return Column(
+                            children: [
+                              _buildInfoRow('Tên', userName, isHighlight: true),
+                              _buildInfoRow(
+                                'SDT',
+                                phoneNumber,
+                                isHighlight: true,
+                              ),
+                              _buildInfoRow(
+                                'Mã đơn',
+                                widget.orderId,
+                                isHighlight: true,
+                              ),
+                            ],
+                          );
+                        },
+                        loading: () => Column(
+                          children: [
+                            _buildInfoRow(
+                              'Tên',
+                              'Đang tải...',
+                              isHighlight: true,
+                            ),
+                            _buildInfoRow(
+                              'SDT',
+                              'Đang tải...',
+                              isHighlight: true,
+                            ),
+                            _buildInfoRow(
+                              'Mã đơn',
+                              widget.orderId,
+                              isHighlight: true,
+                            ),
+                          ],
+                        ),
+                        error: (_, __) => Column(
+                          children: [
+                            _buildInfoRow(
+                              'Tên',
+                              'Lỗi tải dữ liệu',
+                              isHighlight: true,
+                            ),
+                            _buildInfoRow(
+                              'SDT',
+                              'Lỗi tải dữ liệu',
+                              isHighlight: true,
+                            ),
+                            _buildInfoRow(
+                              'Mã đơn',
+                              widget.orderId,
+                              isHighlight: true,
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 12),
                       _buildInfoRow('Chi tiết đơn', ''),
@@ -270,13 +324,37 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Create booking object
+                    // Get current user ID and email
+                    final authRepository = ref.read(authRepositoryProvider);
+                    final userId = authRepository.currentUserId;
+                    final userEmail = authRepository.currentUserEmail;
+
+                    if (userId == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Vui lòng đăng nhập')),
+                      );
+                      return;
+                    }
+
+                    // Create booking object with user info
                     final newBooking = {
+                      'userId': userId,
+                      'courtId': widget.court.id,
                       'courtName': widget.court.name,
                       'status': 'Đã xác nhận',
                       'courts': _formatSelectedSlots(),
-                      'date': DateFormat('dd/MM/yyyy').format(widget.selectedDate),
+                      'date': DateFormat(
+                        'dd/MM/yyyy',
+                      ).format(widget.selectedDate),
                       'address': widget.court.location,
+                      'totalPrice': widget.totalPrice,
+                      'depositPaid': _calculateDepositAmount(),
+                      'orderId': widget.orderId,
+                      'customerType': widget.customerType.toString(),
+                      'bookingType': widget.bookingType.toString(),
+                      'userName': widget.user?.name ?? '',
+                      'userPhone': widget.user?.phoneNumber ?? '',
+                      'email': userEmail ?? '',
                     };
 
                     // Save booking to provider
@@ -381,9 +459,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: const Color(0xFFF0F9F7),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
@@ -423,10 +499,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               // Booking Details
               Text(
                 'Bạn đã đặt thành công sân ${_formatSelectedSlots()} ngày ${DateFormat('dd/MM/yyyy').format(widget.selectedDate)}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.black87,
-                ),
+                style: const TextStyle(fontSize: 14, color: Colors.black87),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),

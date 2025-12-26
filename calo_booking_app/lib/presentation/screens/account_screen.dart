@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calo_booking_app/presentation/screens/booked_schedule_screen.dart';
 import 'package:calo_booking_app/presentation/viewmodels/auth_viewmodel.dart';
+import 'package:calo_booking_app/presentation/viewmodels/user_viewmodel.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
   final Function(int) onNavChange;
@@ -15,6 +16,9 @@ class AccountScreen extends ConsumerStatefulWidget {
 class _AccountScreenState extends ConsumerState<AccountScreen> {
   @override
   Widget build(BuildContext context) {
+    final userDocAsync = ref.watch(currentUserDocProvider);
+    final authRepository = ref.watch(authRepositoryProvider);
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Container(
@@ -32,42 +36,124 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 40,
-                          backgroundColor: Colors.grey.shade300,
-                          child: Icon(
-                            Icons.person,
-                            size: 40,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Võ Tấn Hoàng',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1B7A6B),
-                                ),
+                    child: userDocAsync.when(
+                      data: (userDoc) {
+                        final name = userDoc?['name'] ?? 'Người dùng';
+                        final email =
+                            userDoc?['email'] ??
+                            authRepository.currentUserEmail ??
+                            'N/A';
+                        final phone =
+                            userDoc?['phoneNumber'] ?? 'Chưa cập nhật';
+
+                        return Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 40,
+                              backgroundColor: Colors.grey.shade300,
+                              child: Icon(
+                                Icons.person,
+                                size: 40,
+                                color: Colors.grey.shade600,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '0961759953 | hoangphocuong@gmail.com',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1B7A6B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '$phone | $email',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
+                          ],
+                        );
+                      },
+                      loading: () => Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 40,
+                            backgroundColor: Colors.grey.shade300,
+                            child: Icon(
+                              Icons.person,
+                              size: 40,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 16),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Đang tải...',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1B7A6B),
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                CircularProgressIndicator(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      error: (_, __) => Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 40,
+                            backgroundColor: Colors.grey.shade300,
+                            child: Icon(
+                              Icons.person,
+                              size: 40,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Người dùng',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1B7A6B),
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Không thể tải thông tin',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -284,16 +370,13 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 await ref.read(authProvider.notifier).logout();
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Lỗi: $e')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
                 }
               }
             },
-            child: const Text(
-              'Đăng xuất',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Đăng xuất', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

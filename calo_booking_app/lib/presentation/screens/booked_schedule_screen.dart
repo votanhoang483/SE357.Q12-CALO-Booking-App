@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calo_booking_app/presentation/screens/booking_detail_screen.dart';
 import 'package:calo_booking_app/presentation/viewmodels/bookings_viewmodel.dart';
+import 'package:calo_booking_app/presentation/viewmodels/auth_viewmodel.dart';
 
 class BookedScheduleScreen extends ConsumerStatefulWidget {
   const BookedScheduleScreen({super.key});
@@ -15,9 +16,19 @@ class _BookedScheduleScreenState extends ConsumerState<BookedScheduleScreen> {
   @override
   void initState() {
     super.initState();
-    // Load bookings from Firestore when screen initializes
+    // Load user bookings from Firestore when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(bookingsProvider.notifier).loadAllBookings();
+      final authRepository = ref.read(authRepositoryProvider);
+      final userId = authRepository.currentUserId;
+      
+      print('🔍 BookedScheduleScreen - userId: $userId');
+      
+      if (userId != null) {
+        print('📥 Loading bookings for userId: $userId');
+        ref.read(bookingsProvider.notifier).loadUserBookings(userId);
+      } else {
+        print('❌ No userId found!');
+      }
     });
   }
 

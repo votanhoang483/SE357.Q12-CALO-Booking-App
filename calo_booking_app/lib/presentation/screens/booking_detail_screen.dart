@@ -125,12 +125,12 @@ class BookingDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   _buildDetailRow(
                     'Loại khách hàng:',
-                    'Sinh viên',
+                    _getCustomerTypeLabel(booking['customerType'] ?? 'student'),
                   ),
                   const SizedBox(height: 12),
                   _buildDetailRow(
                     'Loại đặt:',
-                    'Cá nhân',
+                    _getBookingTypeLabel(booking['bookingType'] ?? 'dateBooking'),
                   ),
                 ],
               ),
@@ -153,11 +153,11 @@ class BookingDetailScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildDetailRow('Tên:', 'Nguyễn Văn A'),
+                  _buildDetailRow('Tên:', booking['userName'] ?? ''),
                   const SizedBox(height: 12),
-                  _buildDetailRow('Số điện thoại:', '0912345678'),
+                  _buildDetailRow('Số điện thoại:', booking['userPhone'] ?? ''),
                   const SizedBox(height: 12),
-                  _buildDetailRow('Email:', 'nguyenvana@email.com'),
+                  _buildDetailRow('Email:', booking['email'] ?? ''),
                 ],
               ),
             ),
@@ -179,7 +179,10 @@ class BookingDetailScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildPriceRow('Giá sân:', '200.000 đ'),
+                  _buildPriceRow(
+                    'Giá sân:',
+                    _formatPrice(booking['totalPrice'] ?? 0),
+                  ),
                   const SizedBox(height: 8),
                   _buildPriceRow('Giảm giá:', '-0 đ'),
                   const SizedBox(height: 8),
@@ -202,7 +205,7 @@ class BookingDetailScreen extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          '200.000 đ',
+                          _formatPrice(booking['totalPrice'] ?? 0),
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -213,7 +216,10 @@ class BookingDetailScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  _buildPriceRow('Đã thanh toán:', '100.000 đ'),
+                  _buildPriceRow(
+                    'Đã thanh toán:',
+                    _formatPrice(booking['depositPaid'] ?? 0),
+                  ),
                 ],
               ),
             ),
@@ -425,5 +431,39 @@ class BookingDetailScreen extends ConsumerWidget {
       default:
         return Colors.grey;
     }
+  }
+
+  String _getCustomerTypeLabel(String customerType) {
+    switch (customerType) {
+      case 'student':
+        return 'Học sinh - sinh viên';
+      case 'adult':
+        return 'Người lớn';
+      case 'group':
+        return 'Nhóm';
+      default:
+        return customerType;
+    }
+  }
+
+  String _getBookingTypeLabel(String bookingType) {
+    switch (bookingType) {
+      case 'dateBooking':
+        return 'Cá nhân';
+      case 'groupBooking':
+        return 'Nhóm';
+      default:
+        return bookingType;
+    }
+  }
+
+  String _formatPrice(dynamic price) {
+    int numPrice = 0;
+    if (price is int) {
+      numPrice = price;
+    } else if (price is double) {
+      numPrice = price.toInt();
+    }
+    return '${numPrice.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => '.')} đ';
   }
 }

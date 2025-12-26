@@ -40,12 +40,15 @@ class BookingRepository {
   // Get all bookings for a user
   Future<List<Map<String, dynamic>>> getUserBookings(String userId) async {
     try {
+      print('🔥 Querying bookings for userId: $userId');
       final querySnapshot = await _firestore
           .collection('bookings')
           .where('userId', isEqualTo: userId)
           .orderBy('createdAt', descending: true)
           .get();
 
+      print('✅ Found ${querySnapshot.docs.length} bookings for $userId');
+      
       return querySnapshot.docs.map((doc) {
         return {
           'id': doc.id,
@@ -53,7 +56,7 @@ class BookingRepository {
         };
       }).toList();
     } catch (e) {
-      print('Error fetching user bookings: $e');
+      print('❌ Error fetching user bookings: $e');
       return [];
     }
   }
