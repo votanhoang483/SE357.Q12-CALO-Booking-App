@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calo_booking_app/presentation/screens/booked_schedule_screen.dart';
+import 'package:calo_booking_app/presentation/screens/edit_profile_screen.dart';
 import 'package:calo_booking_app/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:calo_booking_app/presentation/viewmodels/user_viewmodel.dart';
 
@@ -230,9 +231,22 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 onTap: () {},
               ),
 
-              const SizedBox(height: 12),
 
-              // Logout Button
+              // Edit Profile Button
+              _buildMenuCard(
+                icon: Icons.edit,
+                title: 'Chỉnh sửa thông tin cá nhân',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const EditProfileScreen(),
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: GestureDetector(

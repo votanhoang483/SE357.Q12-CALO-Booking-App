@@ -46,14 +46,14 @@ class CourtDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () async {
-                final bookingType = await showModalBottomSheet<BookingType>(
+                final bookingType = await showDialog<BookingType>(
                   context: context,
                   builder: (_) => const BookingTypeSheet(),
                 );
 
                 if (bookingType == null) return;
 
-                final customerType = await showModalBottomSheet<CustomerType>(
+                final customerType = await showDialog<CustomerType>(
                   context: context,
                   builder: (_) => const BookingTargetSheet(),
                 );

@@ -31,7 +31,9 @@ class AuthRepository {
 
       // Create user document in Firestore
       if (userCredential.user != null) {
-        print('💾 Creating user document in Firestore for: ${userCredential.user!.uid}');
+        print(
+          '💾 Creating user document in Firestore for: ${userCredential.user!.uid}',
+        );
         await _firestore.collection('users').doc(userCredential.user!.uid).set({
           'name': name,
           'email': email,
@@ -93,10 +95,7 @@ class AuthRepository {
     try {
       final doc = await _firestore.collection('users').doc(userId).get();
       if (doc.exists) {
-        return {
-          'id': doc.id,
-          ...doc.data() as Map<String, dynamic>,
-        };
+        return {'id': doc.id, ...doc.data() as Map<String, dynamic>};
       }
       return null;
     } catch (e) {
@@ -106,14 +105,22 @@ class AuthRepository {
   }
 
   // Update user document
-  Future<void> updateUserDocument(String userId, Map<String, dynamic> data) async {
+  Future<void> updateUserDocument(
+    String userId,
+    Map<String, dynamic> data,
+  ) async {
     try {
+      print('🔥 updateUserDocument called with userId: $userId');
+      print('📊 Data to update: $data');
+
       await _firestore.collection('users').doc(userId).update({
         ...data,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
+      print('✅ updateUserDocument success!');
     } catch (e) {
-      print('Error updating user document: $e');
+      print('❌ Error updating user document: $e');
       rethrow;
     }
   }
