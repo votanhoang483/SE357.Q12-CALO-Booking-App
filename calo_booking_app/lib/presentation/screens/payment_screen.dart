@@ -47,6 +47,7 @@ class PaymentScreen extends ConsumerStatefulWidget {
 class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   late Timer _timer;
   int _remainingSeconds = 300; // 5 minutes
+  bool _receiptUploaded = false; // Flag: 0 = chưa tải ảnh, 1 = đã tải ảnh
 
   @override
   void initState() {
@@ -61,9 +62,24 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           _remainingSeconds--;
         } else {
           _timer.cancel();
+          // Auto-delete booking if receipt not uploaded after 5 minutes
+          _autoDeleteBookingIfNotPaid();
         }
       });
     });
+  }
+
+  Future<void> _autoDeleteBookingIfNotPaid() async {
+    // Only auto-delete if receipt is not uploaded
+    if (!_receiptUploaded && widget.bookingId != null) {
+      try {
+        final firestore = FirebaseFirestore.instance;
+        await firestore.collection('bookings').doc(widget.bookingId).delete();
+        print('🗑️ Booking auto-deleted (timeout): ${widget.bookingId}');
+      } catch (e) {
+        print('❌ Error auto-deleting booking: $e');
+      }
+    }
   }
 
   @override
@@ -344,12 +360,28 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     const SizedBox(height: 8),
                     Text(
                       _formatTime(_remainingSeconds),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1B7A6B),
+                        color: _remainingSeconds <= 60
+                            ? Colors.red
+                            : const Color(0xFF1B7A6B),
                       ),
                     ),
+                    if (_remainingSeconds <= 60)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Text(
+                          _receiptUploaded
+                              ? 'Bạn đã tải ảnh, có thể xác nhận đặt'
+                              : 'Vui lòng tải ảnh thanh toán để xác nhận!',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: _receiptUploaded ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -358,30 +390,47 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               // Receipt Upload Area
               GestureDetector(
                 onTap: () {
-                  // TODO: Implement image picker
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Chức năng tải ảnh sẽ được cập nhật'),
-                    ),
-                  );
+                  setState(() {
+                    _receiptUploaded = !_receiptUploaded;
+                  });
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: Colors.grey.shade300, width: 1),
+                    color: _receiptUploaded
+                        ? const Color(0xFFE8F5E9)
+                        : Colors.white,
+                    border: Border.all(
+                      color: _receiptUploaded
+                          ? const Color(0xFF1B7A6B)
+                          : Colors.grey.shade300,
+                      width: 2,
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 40),
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(Icons.add, size: 40, color: Colors.grey.shade400),
+                        Icon(
+                          _receiptUploaded ? Icons.check_circle : Icons.add,
+                          size: 40,
+                          color: _receiptUploaded
+                              ? const Color(0xFF1B7A6B)
+                              : Colors.grey.shade400,
+                        ),
                         const SizedBox(height: 12),
                         Text(
-                          'Nhân vào để tải hình thanh toán (*)',
+                          _receiptUploaded
+                              ? 'Đã tải hình thanh toán'
+                              : 'Nhân vào để tải hình thanh toán (*)',
                           style: TextStyle(
-                            color: Colors.grey.shade600,
+                            color: _receiptUploaded
+                                ? const Color(0xFF1B7A6B)
+                                : Colors.grey.shade600,
                             fontSize: 13,
+                            fontWeight: _receiptUploaded
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
                       ],
@@ -417,23 +466,32 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                             .collection('bookings')
                             .doc(widget.bookingId)
                             .update({
-                          'userId': userId,
-                          'status': 'Đã xác nhận', // Update status from "Chờ thanh toán" to "Đã xác nhận"
-                          'userName': userDocAsync.value?['name'] ?? '',
-                          'userPhone': userDocAsync.value?['phoneNumber'] ?? '',
-                          'email': userEmail ?? '',
-                          'depositPaid': _calculateDepositAmount(),
-                          'updatedAt': FieldValue.serverTimestamp(),
-                        });
+                              'userId': userId,
+                              'status': _receiptUploaded
+                                  ? 'Đã thanh toán'
+                                  : 'Chưa thanh toán',
+                              'userName': userDocAsync.value?['name'] ?? '',
+                              'userPhone':
+                                  userDocAsync.value?['phoneNumber'] ?? '',
+                              'email': userEmail ?? '',
+                              'depositPaid': _calculateDepositAmount(),
+                              'receiptUploaded':
+                                  _receiptUploaded, // Flag for staff to verify
+                              'updatedAt': FieldValue.serverTimestamp(),
+                            });
 
-                        print('✅ Booking confirmed (updated): ${widget.bookingId}');
+                        print(
+                          '✅ Booking confirmed (updated): ${widget.bookingId}',
+                        );
                       } else {
                         // Fallback: Create new booking if no draft ID
                         final newBooking = {
                           'userId': userId,
                           'courtId': widget.court.id,
                           'courtName': widget.court.name,
-                          'status': 'Đã xác nhận',
+                          'status': _receiptUploaded
+                              ? 'Đã thanh toán'
+                              : 'Chưa thanh toán',
                           'slots': widget.slotDetails ?? [],
                           'date': DateFormat(
                             'dd/MM/yyyy',
@@ -448,9 +506,13 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                           'userName': userDocAsync.value?['name'] ?? '',
                           'userPhone': userDocAsync.value?['phoneNumber'] ?? '',
                           'email': userEmail ?? '',
+                          'receiptUploaded':
+                              _receiptUploaded, // Flag for staff to verify
                         };
 
-                        ref.read(bookingsProvider.notifier).addBooking(newBooking);
+                        ref
+                            .read(bookingsProvider.notifier)
+                            .addBooking(newBooking);
                         print('💾 Booking created (new)');
                       }
 
@@ -461,9 +523,9 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     } catch (e) {
                       print('❌ Error confirming booking: $e');
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Lỗi: $e')),
-                        );
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
                       }
                     }
                   },
@@ -611,7 +673,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Sân được chọn:',
-                    style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(

@@ -1,4 +1,3 @@
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:calo_booking_app/data/repositories/booking_repository.dart';
@@ -19,13 +18,13 @@ class BookingsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
     try {
       // Remove statusColor before saving (it's only for UI)
       booking.remove('statusColor');
-      
+
       // Save to Firestore
       final bookingId = await _bookingRepository.createBooking(booking);
-      
+
       // Add ID to booking data for local state
       booking['id'] = bookingId;
-      
+
       // Update local state
       state = [...state, booking];
     } catch (e) {
@@ -62,14 +61,11 @@ class BookingsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
   Future<void> cancelBooking(String bookingId) async {
     try {
       await _bookingRepository.cancelBooking(bookingId);
-      
+
       // Update local state
       final updatedBookings = state.map((booking) {
         if (booking['id'] == bookingId) {
-          return {
-            ...booking,
-            'status': 'Đã hủy',
-          };
+          return {...booking, 'status': 'Đã hủy'};
         }
         return booking;
       }).toList();
@@ -80,18 +76,34 @@ class BookingsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
     }
   }
 
+  // Request cancellation (for paid bookings)
+  Future<void> requestCancellation(String bookingId) async {
+    try {
+      await _bookingRepository.requestCancellation(bookingId);
+
+      // Update local state
+      final updatedBookings = state.map((booking) {
+        if (booking['id'] == bookingId) {
+          return {...booking, 'status': 'Yêu cầu hủy'};
+        }
+        return booking;
+      }).toList();
+      state = updatedBookings;
+    } catch (e) {
+      print('Error requesting cancellation: $e');
+      rethrow;
+    }
+  }
+
   // Update booking status
   Future<void> updateBookingStatus(String bookingId, String newStatus) async {
     try {
       await _bookingRepository.updateBookingStatus(bookingId, newStatus);
-      
+
       // Update local state
       final updatedBookings = state.map((booking) {
         if (booking['id'] == bookingId) {
-          return {
-            ...booking,
-            'status': newStatus,
-          };
+          return {...booking, 'status': newStatus};
         }
         return booking;
       }).toList();
@@ -106,7 +118,7 @@ class BookingsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
   Future<void> deleteBooking(String bookingId) async {
     try {
       await _bookingRepository.deleteBooking(bookingId);
-      
+
       // Remove from local state
       state = state.where((booking) => booking['id'] != bookingId).toList();
     } catch (e) {
@@ -122,6 +134,6 @@ class BookingsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
 
 final bookingsProvider =
     StateNotifierProvider<BookingsNotifier, List<Map<String, dynamic>>>((ref) {
-  final bookingRepository = ref.watch(bookingRepositoryProvider);
-  return BookingsNotifier(bookingRepository);
-});
+      final bookingRepository = ref.watch(bookingRepositoryProvider);
+      return BookingsNotifier(bookingRepository);
+    });

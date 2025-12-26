@@ -115,21 +115,37 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
         final expiresAt = booking['expiresAt'] as Timestamp?;
 
         // Include if confirmed
-        if (status == 'Đã xác nhận') {
+        if (status == 'Đã xác nhận' || status == 'Đã thanh toán') {
+          print('✅ Including confirmed booking: ${doc.id}');
           return true;
         }
 
         // Include if draft and not expired
-        if (status == 'Chờ thanh toán') {
-          if (expiresAt != null && now.toDate().isBefore(expiresAt.toDate())) {
-            return true; // Not expired
-          } else if (expiresAt != null) {
-            // Expired draft - delete it
+        if (status == 'Chờ thanh toán' || status == 'Chưa thanh toán') {
+          if (expiresAt != null) {
+            final expiresDateTime = expiresAt.toDate();
+            final isExpired = now.toDate().isAfter(expiresDateTime);
+
+            if (!isExpired) {
+              print(
+                '✅ Including non-expired booking ($status): ${doc.id}, expires at $expiresDateTime',
+              );
+              return true; // Not expired - lock the slots
+            } else {
+              // Expired booking - delete it
+              print('⏰ Booking expired ($status): ${doc.id}, deleting...');
+              firestore.collection('bookings').doc(doc.id).delete();
+              print('🗑️ Deleted expired booking: ${doc.id}');
+              return false;
+            }
+          } else {
+            // Booking without expiresAt (old bookings) - delete them
+            print(
+              '🗑️ Booking without expiresAt, deleting old booking ($status): ${doc.id}',
+            );
             firestore.collection('bookings').doc(doc.id).delete();
-            print('🗑️ Deleted expired draft booking: ${doc.id}');
             return false;
           }
-          return false;
         }
 
         return false;
@@ -489,8 +505,12 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
                           return; // Error creating draft booking
                         }
 
+                        print(
+                          '🔄 Reloading booked slots after draft creation...',
+                        );
                         // Reload booked slots to show the new draft booking
                         await _loadBookedSlotsForDate(_selectedDate);
+                        print('✅ Booked slots reloaded');
 
                         if (context.mounted) {
                           Navigator.push(

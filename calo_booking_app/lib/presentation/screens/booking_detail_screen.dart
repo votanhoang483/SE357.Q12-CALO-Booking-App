@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calo_booking_app/presentation/viewmodels/bookings_viewmodel.dart';
+import 'package:calo_booking_app/presentation/screens/booked_schedule_screen.dart';
 
 class BookingDetailScreen extends ConsumerWidget {
   final Map<String, dynamic> booking;
 
-  const BookingDetailScreen({
-    super.key,
-    required this.booking,
-  });
+  const BookingDetailScreen({super.key, required this.booking});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statusColor = _getStatusColor(booking['status']);
+    final screenContext = context; // Store screen context
 
     return Scaffold(
       appBar: AppBar(
@@ -48,10 +47,7 @@ class BookingDetailScreen extends ConsumerWidget {
                     ),
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.1),
-                      border: Border.all(
-                        color: statusColor,
-                        width: 1,
-                      ),
+                      border: Border.all(color: statusColor, width: 1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -93,10 +89,7 @@ class BookingDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     booking['address'],
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade700,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
                   ),
                 ],
               ),
@@ -130,7 +123,9 @@ class BookingDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   _buildDetailRow(
                     'Loại đặt:',
-                    _getBookingTypeLabel(booking['bookingType'] ?? 'dateBooking'),
+                    _getBookingTypeLabel(
+                      booking['bookingType'] ?? 'dateBooking',
+                    ),
                   ),
                 ],
               ),
@@ -227,7 +222,9 @@ class BookingDetailScreen extends ConsumerWidget {
             const SizedBox(height: 16),
 
             // Action Buttons
-            if (booking['status'] == 'Đã xác nhận')
+            if (booking['status'] == 'Đã xác nhận' ||
+                booking['status'] == 'Chưa thanh toán' ||
+                booking['status'] == 'Đã thanh toán')
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
@@ -236,7 +233,7 @@ class BookingDetailScreen extends ConsumerWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          _showCancelDialog(context, ref);
+                          _showCancelDialog(screenContext, ref);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
@@ -350,13 +347,7 @@ class BookingDetailScreen extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            color: Colors.grey,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
         Text(
           value,
           style: const TextStyle(
@@ -369,41 +360,67 @@ class BookingDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _showCancelDialog(BuildContext context, WidgetRef ref) {
+  void _showCancelDialog(BuildContext screenContext, WidgetRef ref) {
+    final status = booking['status'] as String? ?? '';
+    final isUnpaid = status == 'Chưa thanh toán';
+
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: screenContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Hủy đặt lịch'),
-        content: const Text('Bạn có chắc chắn muốn hủy đặt lịch này không?'),
+        content: Text(
+          isUnpaid
+              ? 'Bạn có chắc chắn muốn hủy đặt lịch này không? Slots sẽ được trả lại.'
+              : 'Bạn muốn hủy đặt lịch này? Yêu cầu sẽ được gửi cho staff xử lý. Vui lòng liên hệ để hoàn tiền.',
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Không'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              
-              try {
-                // Cancel booking in Firestore
-                if (booking['id'] != null) {
-                  await ref
-                      .read(bookingsProvider.notifier)
-                      .cancelBooking(booking['id']);
-                }
+              Navigator.pop(dialogContext); // Close dialog with dialog context
 
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Đã hủy đặt lịch thành công'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
+              try {
+                if (booking['id'] != null) {
+                  if (isUnpaid) {
+                    print('🗑️ Deleting unpaid booking: ${booking['id']}');
+                    await ref
+                        .read(bookingsProvider.notifier)
+                        .cancelBooking(booking['id']);
+                  } else {
+                    print(
+                      '📝 Sending cancellation request for: ${booking['id']}',
+                    );
+                    await ref
+                        .read(bookingsProvider.notifier)
+                        .requestCancellation(booking['id']);
+                  }
+
+                  // Show snackbar with screen context
+                  if (screenContext.mounted) {
+                    ScaffoldMessenger.of(screenContext).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isUnpaid
+                              ? 'Đã hủy đặt lịch. Slots được trả lại.'
+                              : 'Yêu cầu hủy được gửi cho staff.',
+                        ),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
+
+                  // Pop the detail screen with screen context
+                  if (screenContext.mounted) {
+                    await Future.delayed(const Duration(milliseconds: 800));
+                    Navigator.pop(screenContext);
+                  }
                 }
               } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                if (screenContext.mounted) {
+                  ScaffoldMessenger.of(screenContext).showSnackBar(
                     SnackBar(
                       content: Text('Lỗi: $e'),
                       duration: const Duration(seconds: 2),
@@ -412,9 +429,9 @@ class BookingDetailScreen extends ConsumerWidget {
                 }
               }
             },
-            child: const Text(
-              'Hủy',
-              style: TextStyle(color: Colors.red),
+            child: Text(
+              isUnpaid ? 'Hủy' : 'Gửi yêu cầu',
+              style: const TextStyle(color: Colors.red),
             ),
           ),
         ],
@@ -465,7 +482,7 @@ class BookingDetailScreen extends ConsumerWidget {
 
     // Convert to Map if needed and group by court
     Map<String, List<Map<String, dynamic>>> groupedByDay = {};
-    
+
     for (var slot in slots) {
       final slotMap = Map<String, dynamic>.from(slot as Map);
       final key = slotMap['court'];
@@ -476,16 +493,19 @@ class BookingDetailScreen extends ConsumerWidget {
     }
 
     List<String> result = [];
-    
+
     groupedByDay.forEach((court, slotList) {
       // Sort by startTime
-      slotList.sort((a, b) => _timeToMinutes(a['startTime'] as String)
-          .compareTo(_timeToMinutes(b['startTime'] as String)));
-      
+      slotList.sort(
+        (a, b) => _timeToMinutes(
+          a['startTime'] as String,
+        ).compareTo(_timeToMinutes(b['startTime'] as String)),
+      );
+
       List<MapEntry<String, String>> ranges = [];
       String rangeStart = slotList[0]['startTime'] as String;
       String rangeEnd = slotList[0]['endTime'] as String;
-      
+
       for (int i = 1; i < slotList.length; i++) {
         // If next slot is consecutive
         if (rangeEnd == slotList[i]['startTime']) {
@@ -499,7 +519,7 @@ class BookingDetailScreen extends ConsumerWidget {
       }
       // Save last range
       ranges.add(MapEntry(rangeStart, rangeEnd));
-      
+
       // Create display string
       for (var range in ranges) {
         result.add('$court: ${range.key} - ${range.value}');

@@ -1,11 +1,14 @@
 import 'package:calo_booking_app/data/models/court_model.dart';
 import 'package:calo_booking_app/presentation/screens/court_detail_screen.dart';
 import 'package:calo_booking_app/presentation/screens/account_screen.dart';
+import 'package:calo_booking_app/presentation/screens/court_schedule_screen.dart';
 import 'package:calo_booking_app/presentation/screens/map_screen.dart';
 import 'package:calo_booking_app/presentation/screens/notification_screen.dart';
 import 'package:calo_booking_app/presentation/viewmodels/search_court_viewmodel.dart';
 import 'package:calo_booking_app/presentation/viewmodels/bookings_viewmodel.dart';
 import 'package:calo_booking_app/presentation/viewmodels/user_viewmodel.dart';
+import 'package:calo_booking_app/presentation/widgets/booking_target_sheet.dart';
+import 'package:calo_booking_app/presentation/widgets/booking_type_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -49,6 +52,230 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _showCourtBottomSheet(BuildContext context, CourtModel court) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Close button
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Chi tiết sân',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            // Court Image
+            Container(
+              height: 150,
+              color: Colors.grey.shade300,
+              child: const Center(
+                child: Icon(Icons.image, size: 40, color: Colors.grey),
+              ),
+            ),
+            // Court Info
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Rating
+                  Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4CAF50),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 4),
+                            const Text(
+                              '4.3',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '(12 đánh giá)',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Court name
+                  Text(
+                    court.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Location
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 20,
+                        color: const Color(0xFF1B7A6B),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          court.location,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Operating hours
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.schedule,
+                        size: 20,
+                        color: const Color(0xFF1B7A6B),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '06:00 - 22:00',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Phone
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.phone,
+                        size: 20,
+                        color: const Color(0xFF1B7A6B),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Liên hệ',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Booking button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // Close bottom sheet
+                        // Delay the dialog to ensure context is still valid
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          if (mounted) {
+                            _showBookingTypeDialog(context, court);
+                          }
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD4A820),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'ĐẶT LỊCH',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showBookingTypeDialog(
+    BuildContext context,
+    CourtModel court,
+  ) async {
+    final bookingType = await showDialog<BookingType>(
+      context: context,
+      builder: (_) => const BookingTypeSheet(),
+    );
+
+    if (bookingType == null) return;
+
+    final customerType = await showDialog<CustomerType>(
+      context: context,
+      builder: (_) => const BookingTargetSheet(),
+    );
+
+    if (customerType == null) return;
+
+    // Navigate to schedule screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CourtScheduleScreen(
+          court: court,
+          bookingType: bookingType,
+          customerType: customerType,
+        ),
+      ),
+    );
   }
 
   @override
@@ -284,7 +511,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       itemCount: courts.length,
                       itemBuilder: (context, index) {
                         final court = courts[index];
-                        return buildCourtCard(context, court);
+                        return GestureDetector(
+                          onTap: () => _showCourtBottomSheet(context, court),
+                          child: buildCourtCard(context, court),
+                        );
                       },
                     );
                   },
@@ -448,12 +678,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   height: 40,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => CourtDetailScreen(court: court),
-                        ),
-                      );
+                      _showBookingTypeDialog(context, court);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFD4A820),

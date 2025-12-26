@@ -129,6 +129,20 @@ class BookingRepository {
     }
   }
 
+  // Request cancellation for paid bookings (send to staff)
+  Future<void> requestCancellation(String bookingId) async {
+    try {
+      await _firestore.collection('bookings').doc(bookingId).update({
+        'status': 'Yêu cầu hủy',
+        'cancellationRequestedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Error requesting cancellation: $e');
+      rethrow;
+    }
+  }
+
   // Get bookings for a court on a specific date
   Future<List<Map<String, dynamic>>> getCourtBookingsOnDate(
     String courtId,
