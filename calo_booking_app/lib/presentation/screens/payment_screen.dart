@@ -169,7 +169,9 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thanh toán'),
+        title: const Text('Thanh toán', style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: const Color(0xFF1B7A6B),
         elevation: 0,
       ),

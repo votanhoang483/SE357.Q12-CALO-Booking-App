@@ -20,9 +20,9 @@ class _BookedScheduleScreenState extends ConsumerState<BookedScheduleScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authRepository = ref.read(authRepositoryProvider);
       final userId = authRepository.currentUserId;
-      
+
       print('🔍 BookedScheduleScreen - userId: $userId');
-      
+
       if (userId != null) {
         print('📥 Loading bookings for userId: $userId');
         ref.read(bookingsProvider.notifier).loadUserBookings(userId);
@@ -38,7 +38,12 @@ class _BookedScheduleScreenState extends ConsumerState<BookedScheduleScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Danh sách đặt lịch'),
+        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
+        title: const Text(
+          'Danh sách đặt lịch',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF1B7A6B),
         elevation: 0,
       ),

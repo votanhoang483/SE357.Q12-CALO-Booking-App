@@ -127,7 +127,12 @@ class _BookingConfirmationScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Đặt lịch ngay trực quan'),
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.white),
+        title: const Text(
+          'Đặt lịch ngày trực quan',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF1B7A6B),
         elevation: 0,
       ),

@@ -545,7 +545,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               BottomNavigationBarItem(
                 icon: const Icon(Icons.notifications),
-                label: 'Nội bật',
+                label: 'Nổi bật',
               ),
               BottomNavigationBarItem(
                 icon: const Icon(Icons.person),

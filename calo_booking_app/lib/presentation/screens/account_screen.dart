@@ -278,7 +278,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           BottomNavigationBarItem(icon: const Icon(Icons.map), label: 'Bản đồ'),
           BottomNavigationBarItem(
             icon: const Icon(Icons.notifications),
-            label: 'Nội bật',
+            label: 'Nổi bật',
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.person),

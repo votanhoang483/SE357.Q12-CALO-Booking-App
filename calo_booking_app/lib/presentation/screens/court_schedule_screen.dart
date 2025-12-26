@@ -313,7 +313,12 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Đặt lịch ngay trực quan'),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
+          'Đặt lịch ngày trực quan',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF1B7A6B),
         elevation: 0,
       ),
@@ -433,32 +438,31 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Slot details
-                if (_selectedSlots.isNotEmpty)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Tổng giờ: ${_getTotalMinutes() ~/ 60}h ${_getTotalMinutes() % 60}m',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.white70,
-                            ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tổng giờ: ${_getTotalMinutes() ~/ 60}h ${_getTotalMinutes() % 60}m',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white70,
                           ),
-                        ],
-                      ),
-                      Text(
-                        'Tổng tiền: ${_getTotalPrice().toStringAsFixed(0)} đ',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
                         ),
+                      ],
+                    ),
+                    Text(
+                      'Tổng tiền: ${_getTotalPrice().toStringAsFixed(0)} đ',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
