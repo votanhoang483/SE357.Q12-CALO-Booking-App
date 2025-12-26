@@ -172,7 +172,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         title: const Text('Thanh toán', style: TextStyle(color: Colors.white)),
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
-        backgroundColor: const Color(0xFF1B7A6B),
+        backgroundColor: const Color(0xFF016D3B),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -320,7 +320,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8F5E9),
-                  border: Border.all(color: const Color(0xFF1B7A6B), width: 1),
+                  border: Border.all(color: const Color(0xFF016D3B), width: 1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 padding: const EdgeInsets.all(16.0),
@@ -330,7 +330,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     Text(
                       'Vui lòng chuyển khoản ${depositAmount.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => '.')} đ và gửi ảnh vào ở bên dưới để hoàn tất đặt lịch!',
                       style: const TextStyle(
-                        color: Color(0xFF1B7A6B),
+                        color: Color(0xFF016D3B),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -367,7 +367,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                         fontWeight: FontWeight.bold,
                         color: _remainingSeconds <= 60
                             ? Colors.red
-                            : const Color(0xFF1B7A6B),
+                            : const Color(0xFF016D3B),
                       ),
                     ),
                     if (_remainingSeconds <= 60)
@@ -403,7 +403,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                         : Colors.white,
                     border: Border.all(
                       color: _receiptUploaded
-                          ? const Color(0xFF1B7A6B)
+                          ? const Color(0xFF016D3B)
                           : Colors.grey.shade300,
                       width: 2,
                     ),
@@ -417,7 +417,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                           _receiptUploaded ? Icons.check_circle : Icons.add,
                           size: 40,
                           color: _receiptUploaded
-                              ? const Color(0xFF1B7A6B)
+                              ? const Color(0xFF016D3B)
                               : Colors.grey.shade400,
                         ),
                         const SizedBox(height: 12),
@@ -427,7 +427,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                               : 'Nhân vào để tải hình thanh toán (*)',
                           style: TextStyle(
                             color: _receiptUploaded
-                                ? const Color(0xFF1B7A6B)
+                                ? const Color(0xFF016D3B)
                                 : Colors.grey.shade600,
                             fontSize: 13,
                             fontWeight: _receiptUploaded
@@ -586,7 +586,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
-                color: isHighlight ? const Color(0xFF1B7A6B) : Colors.black87,
+                color: isHighlight ? const Color(0xFF016D3B) : Colors.black87,
               ),
             ),
           ),
@@ -705,7 +705,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1B7A6B),
+                    backgroundColor: const Color(0xFF016D3B),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),

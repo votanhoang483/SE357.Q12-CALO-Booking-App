@@ -108,7 +108,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1B7A6B),
+                      color: Color(0xFF016D3B),
                     ),
                   ),
                 ),
@@ -184,7 +184,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     },
                     child: const Text(
                       'Quên mật khẩu?',
-                      style: TextStyle(color: Color(0xFF1B7A6B), fontSize: 12),
+                      style: TextStyle(color: Color(0xFF016D3B), fontSize: 12),
                     ),
                   ),
                 ),
@@ -197,7 +197,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1B7A6B),
+                      backgroundColor: const Color(0xFF016D3B),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -261,7 +261,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     },
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(
-                        color: Color(0xFF1B7A6B),
+                        color: Color(0xFF016D3B),
                         width: 2,
                       ),
                       shape: RoundedRectangleBorder(
@@ -273,7 +273,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1B7A6B),
+                        color: Color(0xFF016D3B),
                       ),
                     ),
                   ),

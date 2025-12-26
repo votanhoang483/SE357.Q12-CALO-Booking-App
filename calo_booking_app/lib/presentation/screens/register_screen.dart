@@ -132,7 +132,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Đăng ký'),
-        backgroundColor: const Color(0xFF1B7A6B),
+        backgroundColor: const Color(0xFF016D3B),
         elevation: 0,
       ),
       body: SafeArea(
@@ -163,13 +163,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           decoration: BoxDecoration(
                             border: Border.all(
                               color: _selectedRole == 'user'
-                                  ? const Color(0xFF1B7A6B)
+                                  ? const Color(0xFF016D3B)
                                   : Colors.grey.shade300,
                               width: 2,
                             ),
                             borderRadius: BorderRadius.circular(8),
                             color: _selectedRole == 'user'
-                                ? const Color(0xFF1B7A6B).withOpacity(0.1)
+                                ? const Color(0xFF016D3B).withOpacity(0.1)
                                 : Colors.transparent,
                           ),
                           child: Text(
@@ -178,7 +178,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               color: _selectedRole == 'user'
-                                  ? const Color(0xFF1B7A6B)
+                                  ? const Color(0xFF016D3B)
                                   : Colors.grey,
                             ),
                             textAlign: TextAlign.center,
@@ -198,13 +198,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           decoration: BoxDecoration(
                             border: Border.all(
                               color: _selectedRole == 'staff'
-                                  ? const Color(0xFF1B7A6B)
+                                  ? const Color(0xFF016D3B)
                                   : Colors.grey.shade300,
                               width: 2,
                             ),
                             borderRadius: BorderRadius.circular(8),
                             color: _selectedRole == 'staff'
-                                ? const Color(0xFF1B7A6B).withOpacity(0.1)
+                                ? const Color(0xFF016D3B).withOpacity(0.1)
                                 : Colors.transparent,
                           ),
                           child: Text(
@@ -213,7 +213,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               color: _selectedRole == 'staff'
-                                  ? const Color(0xFF1B7A6B)
+                                  ? const Color(0xFF016D3B)
                                   : Colors.grey,
                             ),
                             textAlign: TextAlign.center,
@@ -246,13 +246,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             decoration: BoxDecoration(
                               border: Border.all(
                                 color: _selectedCourt == 'court1'
-                                    ? const Color(0xFF1B7A6B)
+                                    ? const Color(0xFF016D3B)
                                     : Colors.grey.shade300,
                                 width: 2,
                               ),
                               borderRadius: BorderRadius.circular(8),
                               color: _selectedCourt == 'court1'
-                                  ? const Color(0xFF1B7A6B).withOpacity(0.1)
+                                  ? const Color(0xFF016D3B).withOpacity(0.1)
                                   : Colors.transparent,
                             ),
                             child: Text(
@@ -261,7 +261,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                                 color: _selectedCourt == 'court1'
-                                    ? const Color(0xFF1B7A6B)
+                                    ? const Color(0xFF016D3B)
                                     : Colors.grey,
                               ),
                               textAlign: TextAlign.center,
@@ -282,13 +282,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             decoration: BoxDecoration(
                               border: Border.all(
                                 color: _selectedCourt == 'court2'
-                                    ? const Color(0xFF1B7A6B)
+                                    ? const Color(0xFF016D3B)
                                     : Colors.grey.shade300,
                                 width: 2,
                               ),
                               borderRadius: BorderRadius.circular(8),
                               color: _selectedCourt == 'court2'
-                                  ? const Color(0xFF1B7A6B).withOpacity(0.1)
+                                  ? const Color(0xFF016D3B).withOpacity(0.1)
                                   : Colors.transparent,
                             ),
                             child: Text(
@@ -297,7 +297,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                                 color: _selectedCourt == 'court2'
-                                    ? const Color(0xFF1B7A6B)
+                                    ? const Color(0xFF016D3B)
                                     : Colors.grey,
                               ),
                               textAlign: TextAlign.center,
@@ -447,7 +447,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleRegister,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1B7A6B),
+                      backgroundColor: const Color(0xFF016D3B),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -491,7 +491,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1B7A6B),
+                            color: Color(0xFF016D3B),
                           ),
                         ),
                       ),

@@ -319,14 +319,14 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
           'Đặt lịch ngày trực quan',
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: const Color(0xFF1B7A6B),
+        backgroundColor: const Color(0xFF016D3B),
         elevation: 0,
       ),
       body: Column(
         children: [
           // Date picker section
           Container(
-            color: const Color(0xFF1B7A6B),
+            color: const Color(0xFF016D3B),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -373,7 +373,7 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
           // Legend section
           Container(
             width: double.infinity,
-            color: const Color(0xFF1B7A6B),
+            color: const Color(0xFF016D3B),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -416,7 +416,7 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
                 ? const Center(
                     child: CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFF1B7A6B),
+                        Color(0xFF016D3B),
                       ),
                     ),
                   )
@@ -431,7 +431,7 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
             margin: const EdgeInsets.symmetric(horizontal: 16.0),
             padding: const EdgeInsets.all(12.0),
             decoration: BoxDecoration(
-              color: const Color(0xFF1B7A6B),
+              color: const Color(0xFF016D3B),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(

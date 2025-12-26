@@ -33,7 +33,7 @@ class BookingTypeSheet extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1B7A6B),
+                color: Color(0xFF016D3B),
               ),
               textAlign: TextAlign.center,
             ),
@@ -43,7 +43,7 @@ class BookingTypeSheet extends StatelessWidget {
               description:
                   'Đặt lịch ngày khi khách chơi nhiều khung giờ, nhiều sân.',
               backgroundColor: const Color(0xFFD4F1E8),
-              buttonColor: const Color(0xFF1B7A6B),
+              buttonColor: const Color(0xFF016D3B),
               onTap: () {
                 Navigator.pop(context, BookingType.dateBooking);
               },

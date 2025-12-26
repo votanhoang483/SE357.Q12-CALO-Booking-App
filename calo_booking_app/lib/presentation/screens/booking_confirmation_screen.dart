@@ -133,12 +133,12 @@ class _BookingConfirmationScreenState
           'Đặt lịch ngày trực quan',
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: const Color(0xFF1B7A6B),
+        backgroundColor: const Color(0xFF016D3B),
         elevation: 0,
       ),
       body: SingleChildScrollView(
         child: Container(
-          color: const Color(0xFF1B7A6B),
+          color: const Color(0xFF016D3B),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(

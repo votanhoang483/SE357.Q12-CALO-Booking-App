@@ -48,6 +48,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
   }
 
+  String _getCourtImageUrl(String courtName) {
+    // Map court names to image URLs
+    if (courtName.contains('CALO')) {
+      return 'https://images.unsplash.com/photo-1721760886982-3c643f05813d?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
+    } else if (courtName.contains('Phoenix')) {
+      return 'https://images.unsplash.com/photo-1617696618050-b0fef0c666af?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
+    }
+    return 'https://images.unsplash.com/photo-1554284147-8e4ec759661f?w=500&h=300&fit=crop';
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -58,190 +68,218 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Close button
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Chi tiết sân',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Court Image - Full Width
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+                child: SizedBox(
+                  height: 200,
+                  width: double.infinity,
+                  child: Image.network(
+                    _getCourtImageUrl(court.name),
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Icon(Icons.image, size: 40, color: Colors.grey),
+                      );
+                    },
                   ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.close),
-                  ),
-                ],
+                ),
               ),
-            ),
-            // Court Image
-            Container(
-              height: 150,
-              color: Colors.grey.shade300,
-              child: const Center(
-                child: Icon(Icons.image, size: 40, color: Colors.grey),
-              ),
-            ),
-            // Court Info
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Rating
-                  Row(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4CAF50),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.star,
-                              size: 16,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 4),
-                            const Text(
-                              '4.3',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '(12 đánh giá)',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
+              // Close button
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Chi tiết sân',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Court name
-                  Text(
-                    court.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Location
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 20,
-                        color: const Color(0xFF1B7A6B),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              // Court Info
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Rating
+                    Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4CAF50),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                '4.3',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '(12 đánh giá)',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Court name
+                    Text(
+                      court.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          court.location,
+                    ),
+                    const SizedBox(height: 8),
+                    // Location
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 20,
+                          color: const Color(0xFF016D3B),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            court.location,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Operating hours
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.schedule,
+                          size: 20,
+                          color: const Color(0xFF016D3B),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '06:00 - 22:00',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade700,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Operating hours
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.schedule,
-                        size: 20,
-                        color: const Color(0xFF1B7A6B),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '06:00 - 22:00',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade700,
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Phone
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.phone,
+                          size: 20,
+                          color: const Color(0xFF016D3B),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Phone
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.phone,
-                        size: 20,
-                        color: const Color(0xFF1B7A6B),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Liên hệ',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade700,
+                        const SizedBox(width: 8),
+                        Text(
+                          'Liên hệ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Booking button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context); // Close bottom sheet
-                        // Delay the dialog to ensure context is still valid
-                        Future.delayed(const Duration(milliseconds: 300), () {
-                          if (mounted) {
-                            _showBookingTypeDialog(context, court);
-                          }
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD4A820),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Booking button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context); // Close bottom sheet
+                          // Delay the dialog to ensure context is still valid
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            if (mounted) {
+                              _showBookingTypeDialog(context, court);
+                            }
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFD4A820),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                      ),
-                      child: const Text(
-                        'ĐẶT LỊCH',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                        child: const Text(
+                          'ĐẶT LỊCH',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -317,7 +355,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               // Header Section
               Container(
-                color: const Color(0xFF1B7A6B),
+                color: const Color(0xFF016D3B),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 20,
@@ -387,7 +425,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
               // Search Bar
               Container(
-                color: const Color(0xFF1B7A6B),
+                color: const Color(0xFF016D3B),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
@@ -524,7 +562,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           // Bottom Navigation Bar
           bottomNavigationBar: BottomNavigationBar(
-            backgroundColor: const Color(0xFF1B7A6B),
+            backgroundColor: const Color(0xFF016D3B),
             selectedItemColor: const Color(0xFFD4A820),
             unselectedItemColor: Colors.white70,
             currentIndex: _selectedNavIndex,
@@ -561,22 +599,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Court Image
+          // Court Image - Full Width
           Stack(
             children: [
-              Container(
-                height: 160,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
-                  ),
-                  color: Colors.grey.shade300,
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
                 ),
-                child: const Center(
-                  child: Icon(Icons.image, size: 40, color: Colors.grey),
+                child: SizedBox(
+                  height: 200,
+                  width: double.infinity,
+                  child: Image.network(
+                    _getCourtImageUrl(court.name),
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Icon(Icons.image, size: 40, color: Colors.grey),
+                      );
+                    },
+                  ),
                 ),
               ),
               Positioned(
@@ -619,7 +675,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1B7A6B),
+                        color: const Color(0xFF016D3B),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Center(

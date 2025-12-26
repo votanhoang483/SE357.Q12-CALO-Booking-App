@@ -16,7 +16,7 @@ class BookingDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chi tiết đặt lịch'),
-        backgroundColor: const Color(0xFF1B7A6B),
+        backgroundColor: const Color(0xFF016D3B),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -258,9 +258,9 @@ class BookingDetailScreen extends ConsumerWidget {
                       child: OutlinedButton(
                         onPressed: () {},
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1B7A6B),
+                          foregroundColor: const Color(0xFF016D3B),
                           side: const BorderSide(
-                            color: Color(0xFF1B7A6B),
+                            color: Color(0xFF016D3B),
                             width: 1.5,
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -288,9 +288,9 @@ class BookingDetailScreen extends ConsumerWidget {
                   child: OutlinedButton(
                     onPressed: () {},
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF1B7A6B),
+                      foregroundColor: const Color(0xFF016D3B),
                       side: const BorderSide(
-                        color: Color(0xFF1B7A6B),
+                        color: Color(0xFF016D3B),
                         width: 1.5,
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 12),

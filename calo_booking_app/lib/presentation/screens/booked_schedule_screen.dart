@@ -44,7 +44,7 @@ class _BookedScheduleScreenState extends ConsumerState<BookedScheduleScreen> {
           'Danh sách đặt lịch',
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: const Color(0xFF1B7A6B),
+        backgroundColor: const Color(0xFF016D3B),
         elevation: 0,
       ),
       body: bookings.isEmpty
@@ -78,9 +78,9 @@ class _BookedScheduleScreenState extends ConsumerState<BookedScheduleScreen> {
                         icon: const Icon(Icons.calendar_today, size: 18),
                         label: const Text('Xem tất cả'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1B7A6B),
+                          foregroundColor: const Color(0xFF016D3B),
                           side: const BorderSide(
-                            color: Color(0xFF1B7A6B),
+                            color: Color(0xFF016D3B),
                             width: 1.5,
                           ),
                           padding: const EdgeInsets.symmetric(
@@ -175,7 +175,7 @@ class _BookedScheduleScreenState extends ConsumerState<BookedScheduleScreen> {
             'Chi tiết: ${booking['courts']} | Ngày ${booking['date']}',
             style: TextStyle(
               fontSize: 13,
-              color: const Color(0xFF1B7A6B),
+              color: const Color(0xFF016D3B),
               fontWeight: FontWeight.w500,
             ),
           ),

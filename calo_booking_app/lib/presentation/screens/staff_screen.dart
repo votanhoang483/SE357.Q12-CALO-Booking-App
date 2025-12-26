@@ -37,7 +37,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Quản lý đặt lịch'),
-        backgroundColor: const Color(0xFF1B7A6B),
+        backgroundColor: const Color(0xFF016D3B),
         elevation: 0,
         centerTitle: true,
       ),
@@ -200,7 +200,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1B7A6B),
+                color: Color(0xFF016D3B),
               ),
             ),
             const SizedBox(height: 12),
@@ -225,7 +225,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1B7A6B).withOpacity(0.1),
+              color: const Color(0xFF016D3B).withOpacity(0.1),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(8),
               ),
@@ -235,7 +235,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1B7A6B),
+                color: Color(0xFF016D3B),
               ),
             ),
           ),
@@ -291,7 +291,10 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            booking['courtName'] ?? 'N/A',
+                            booking['slots'] != null &&
+                                    (booking['slots'] as List).isNotEmpty
+                                ? '${(booking['slots'] as List)[0]['court']} - ${(booking['slots'] as List)[0]['startTime']}'
+                                : 'N/A',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -592,7 +595,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(color: Color(0xFF1B7A6B)),
+              decoration: const BoxDecoration(color: Color(0xFF016D3B)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -729,7 +732,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, color: const Color(0xFF1B7A6B)),
+      leading: Icon(icon, color: const Color(0xFF016D3B)),
       title: Text(title),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -764,7 +767,10 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          booking['courtName'] ?? 'N/A',
+                          booking['slots'] != null &&
+                                  (booking['slots'] as List).isNotEmpty
+                              ? '${(booking['slots'] as List)[0]['court']} - ${(booking['slots'] as List)[0]['startTime']}'
+                              : 'N/A',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -813,8 +819,20 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
               // Chi tiết booking
               _buildDetailSection('Chi tiết đặt lịch', [
                 _buildDetailRow('Ngày', booking['date'] ?? 'N/A'),
-                _buildDetailRow('Giờ', booking['time'] ?? 'N/A'),
-                _buildDetailRow('Số sân', booking['courtNumber'] ?? 'N/A'),
+                _buildDetailRow(
+                  'Giờ',
+                  booking['slots'] != null &&
+                          (booking['slots'] as List).isNotEmpty
+                      ? '${(booking['slots'] as List)[0]['startTime']}'
+                      : 'N/A',
+                ),
+                _buildDetailRow(
+                  'Số sân',
+                  booking['slots'] != null &&
+                          (booking['slots'] as List).isNotEmpty
+                      ? '${(booking['slots'] as List)[0]['court']}'
+                      : 'N/A',
+                ),
               ]),
               const SizedBox(height: 20),
 
@@ -911,7 +929,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1B7A6B),
+            color: Color(0xFF016D3B),
           ),
         ),
         const SizedBox(height: 12),

@@ -15,7 +15,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nổi bật'),
-        backgroundColor: const Color(0xFF1B7A6B),
+        backgroundColor: const Color(0xFF016D3B),
         elevation: 0,
       ),
       body: Center(
@@ -44,7 +44,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF1B7A6B),
+        backgroundColor: const Color(0xFF016D3B),
         selectedItemColor: const Color(0xFFD4A820),
         unselectedItemColor: Colors.white70,
         currentIndex: 2,

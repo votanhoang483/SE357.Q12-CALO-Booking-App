@@ -109,7 +109,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chỉnh sửa thông tin cá nhân'),
-        backgroundColor: const Color(0xFF1B7A6B),
+        backgroundColor: const Color(0xFF016D3B),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -166,7 +166,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: ElevatedButton(
             onPressed: _isLoading ? null : _saveProfile,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1B7A6B),
+              backgroundColor: const Color(0xFF016D3B),
               disabledBackgroundColor: Colors.grey.shade400,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -200,8 +200,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: OutlinedButton(
             onPressed: _isLoading ? null : () => Navigator.pop(context),
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF1B7A6B),
-              side: const BorderSide(color: Color(0xFF1B7A6B), width: 1.5),
+              foregroundColor: const Color(0xFF016D3B),
+              side: const BorderSide(color: Color(0xFF016D3B), width: 1.5),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -221,7 +221,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(color: Color(0xFF1B7A6B)),
+          const CircularProgressIndicator(color: Color(0xFF016D3B)),
           const SizedBox(height: 16),
           Text(
             'Đang tải thông tin...',
@@ -248,7 +248,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1B7A6B),
+              backgroundColor: const Color(0xFF016D3B),
             ),
             child: const Text('Quay lại'),
           ),
@@ -273,7 +273,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1B7A6B),
+            color: Color(0xFF016D3B),
           ),
         ),
         const SizedBox(height: 8),
@@ -283,16 +283,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           readOnly: readOnly,
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: Icon(icon, color: const Color(0xFF1B7A6B)),
+            prefixIcon: Icon(icon, color: const Color(0xFF016D3B)),
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF1B7A6B), width: 1),
+              borderSide: const BorderSide(color: Color(0xFF016D3B), width: 1),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF1B7A6B), width: 1),
+              borderSide: const BorderSide(color: Color(0xFF016D3B), width: 1),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,

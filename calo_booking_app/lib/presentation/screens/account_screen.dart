@@ -34,6 +34,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 color: const Color(0xFFF0F9F7),
                 padding: const EdgeInsets.all(16.0),
                 child: Card(
+                  color: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -70,7 +71,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF1B7A6B),
+                                      color: Color(0xFF016D3B),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -110,7 +111,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1B7A6B),
+                                    color: Color(0xFF016D3B),
                                   ),
                                 ),
                                 SizedBox(height: 4),
@@ -141,7 +142,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1B7A6B),
+                                    color: Color(0xFF016D3B),
                                   ),
                                 ),
                                 SizedBox(height: 4),
@@ -173,7 +174,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1B7A6B),
+                    color: const Color(0xFF016D3B),
                   ),
                 ),
               ),
@@ -213,7 +214,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1B7A6B),
+                    color: const Color(0xFF016D3B),
                   ),
                 ),
               ),
@@ -262,7 +263,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF1B7A6B),
+        backgroundColor: const Color(0xFF016D3B),
         selectedItemColor: const Color(0xFFD4A820),
         unselectedItemColor: Colors.white70,
         currentIndex: 3,
@@ -312,7 +313,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFF1B7A6B), size: 24),
+            Icon(icon, color: const Color(0xFF016D3B), size: 24),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
