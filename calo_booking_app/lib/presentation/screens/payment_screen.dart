@@ -467,12 +467,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                       }
                     }
                   },
-                      '  - Total: ${widget.selectedSlots.length * 30} minutes, ${widget.totalPrice} đ',
-                    );
-
-                    // Show success dialog
-                    _showSuccessDialog(context);
-                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD4A820),
                     shape: RoundedRectangleBorder(

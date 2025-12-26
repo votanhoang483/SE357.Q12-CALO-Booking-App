@@ -18,6 +18,7 @@ class AuthRepository {
     required String email,
     required String password,
     required String name,
+    required String phone,
   }) async {
     try {
       print('📝 Starting registration for: $email');
@@ -36,8 +37,8 @@ class AuthRepository {
         );
         await _firestore.collection('users').doc(userCredential.user!.uid).set({
           'name': name,
+          'phoneNumber': phone,
           'email': email,
-          'phoneNumber': '',
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
@@ -113,10 +114,10 @@ class AuthRepository {
       print('🔥 updateUserDocument called with userId: $userId');
       print('📊 Data to update: $data');
 
-      await _firestore.collection('users').doc(userId).update({
+      await _firestore.collection('users').doc(userId).set({
         ...data,
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true)); // merge: true → create if not exists
 
       print('✅ updateUserDocument success!');
     } catch (e) {

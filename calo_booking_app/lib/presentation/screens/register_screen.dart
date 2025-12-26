@@ -12,6 +12,7 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -22,6 +23,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -30,6 +32,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   void _handleRegister() async {
     if (_nameController.text.isEmpty ||
+        _phoneController.text.isEmpty ||
         _emailController.text.isEmpty ||
         _passwordController.text.isEmpty ||
         _confirmPasswordController.text.isEmpty) {
@@ -56,23 +59,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await ref.read(authProvider.notifier).register(
-        name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      await ref
+          .read(authProvider.notifier)
+          .register(
+            name: _nameController.text.trim(),
+            phone: _phoneController.text.trim(),
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đăng ký thành công')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Đăng ký thành công')));
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đăng ký thất bại: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Đăng ký thất bại: $e')));
       }
     } finally {
       if (mounted) {
@@ -101,10 +107,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Name Field
                 const Text(
                   'Họ tên',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -122,13 +125,32 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 24),
 
+                // Phone Field
+                const Text(
+                  'Số điện thoại',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    hintText: 'Nhập số điện thoại của bạn',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
                 // Email Field
                 const Text(
                   'Email',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -150,10 +172,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Password Field
                 const Text(
                   'Mật khẩu',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -175,8 +194,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             : Icons.visibility,
                       ),
                       onPressed: () {
-                        setState(() =>
-                            _obscurePassword = !_obscurePassword);
+                        setState(() => _obscurePassword = !_obscurePassword);
                       },
                     ),
                   ),
@@ -186,10 +204,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Confirm Password Field
                 const Text(
                   'Xác nhận mật khẩu',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -211,8 +226,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             : Icons.visibility,
                       ),
                       onPressed: () {
-                        setState(() => _obscureConfirmPassword =
-                            !_obscureConfirmPassword);
+                        setState(
+                          () => _obscureConfirmPassword =
+                              !_obscureConfirmPassword,
+                        );
                       },
                     ),
                   ),

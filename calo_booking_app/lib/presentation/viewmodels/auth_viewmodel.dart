@@ -6,10 +6,7 @@ import 'package:flutter_riverpod/legacy.dart';
 
 // Provider for AuthRepository
 final authRepositoryProvider = Provider((ref) {
-  return AuthRepository(
-    FirebaseAuth.instance,
-    FirebaseFirestore.instance,
-  );
+  return AuthRepository(FirebaseAuth.instance, FirebaseFirestore.instance);
 });
 
 // Provider for current user (stream)
@@ -28,6 +25,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     required String email,
     required String password,
     required String name,
+    required String phone,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -35,6 +33,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         email: email,
         password: password,
         name: name,
+        phone: phone,
       );
       state = const AsyncValue.data(null);
     } catch (e, st) {
@@ -44,16 +43,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   // Login
-  Future<void> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> login({required String email, required String password}) async {
     state = const AsyncValue.loading();
     try {
-      await _authRepository.login(
-        email: email,
-        password: password,
-      );
+      await _authRepository.login(email: email, password: password);
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -74,7 +67,9 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final authProvider = StateNotifierProvider<AuthNotifier, AsyncValue<void>>((ref) {
+final authProvider = StateNotifierProvider<AuthNotifier, AsyncValue<void>>((
+  ref,
+) {
   final authRepository = ref.watch(authRepositoryProvider);
   return AuthNotifier(authRepository);
 });

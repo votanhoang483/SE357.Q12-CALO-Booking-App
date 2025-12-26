@@ -101,7 +101,7 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
       // Query bookings collection for this date
       final firestore = FirebaseFirestore.instance;
       final now = Timestamp.now();
-      
+
       // Get all bookings for this date that are either confirmed or not expired
       final bookingsSnapshot = await firestore
           .collection('bookings')
@@ -135,9 +135,7 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
         return false;
       }).toList();
 
-      print(
-        '📊 Found ${validBookings.length} valid bookings for $dateString',
-      );
+      print('📊 Found ${validBookings.length} valid bookings for $dateString');
 
       // Reset booked slots
       Map<String, Set<int>> bookedIndices = {
@@ -255,7 +253,9 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
       final orderId =
           '#${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
       final now = DateTime.now();
-      final expiresAt = now.add(const Duration(minutes: 5)); // Expire after 5 minutes
+      final expiresAt = now.add(
+        const Duration(minutes: 5),
+      ); // Expire after 5 minutes
 
       final draftBooking = {
         'userId': 'temp_user', // Sẽ update khi có user info
@@ -271,7 +271,9 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
         'customerType': widget.customerType.toString(),
         'bookingType': widget.bookingType.toString(),
         'createdAt': FieldValue.serverTimestamp(),
-        'expiresAt': Timestamp.fromDate(expiresAt), // Auto-expire after 5 minutes
+        'expiresAt': Timestamp.fromDate(
+          expiresAt,
+        ), // Auto-expire after 5 minutes
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
@@ -281,9 +283,9 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
       return docRef.id;
     } catch (e) {
       print('❌ Error creating draft booking: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
       return null;
     }
   }
@@ -478,8 +480,11 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
                         );
 
                         // Create draft booking (status: "Chờ thanh toán")
-                        final bookingId = await _createDraftBooking(slotIds, slotDetails);
-                        
+                        final bookingId = await _createDraftBooking(
+                          slotIds,
+                          slotDetails,
+                        );
+
                         if (bookingId == null) {
                           return; // Error creating draft booking
                         }
@@ -499,7 +504,8 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
                                 customerType: widget.customerType,
                                 user: null,
                                 slotDetails: slotDetails,
-                                bookingId: bookingId, // Pass booking ID for update later
+                                bookingId:
+                                    bookingId, // Pass booking ID for update later
                               ),
                             ),
                           );

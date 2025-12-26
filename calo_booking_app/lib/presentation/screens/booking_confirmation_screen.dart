@@ -260,7 +260,8 @@ class _BookingConfirmationScreenState
                             totalPrice: totalPrice,
                             totalMinutes: totalMinutes,
                             slotDetails: widget.slotDetails,
-                            bookingId: widget.bookingId, // Pass draft booking ID
+                            bookingId:
+                                widget.bookingId, // Pass draft booking ID
                           ),
                         ),
                       );
