@@ -242,49 +242,271 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
     );
   }
 
-  // Create draft booking (status: "Chờ thanh toán")
+  // Create draft booking (status: "Chờ thanh toán") với TRANSACTION
+  // Sử dụng transaction để tránh race condition (double-booking)
   Future<String?> _createDraftBooking(
     Set<String> slotIds,
     List<Map<String, dynamic>> slotDetails,
   ) async {
+    final firestore = FirebaseFirestore.instance;
+    final orderId =
+        '#${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
+    final now = DateTime.now();
+    final expiresAt = now.add(
+      const Duration(minutes: 5),
+    ); // Expire after 5 minutes
+
+    final date = DateFormat('dd/MM/yyyy').format(_selectedDate);
+
+    // Biến lưu conflict slots (nếu có)
+    List<String> conflictSlots = [];
+
     try {
-      final firestore = FirebaseFirestore.instance;
-      final orderId =
-          '#${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
-      final now = DateTime.now();
-      final expiresAt = now.add(
-        const Duration(minutes: 5),
-      ); // Expire after 5 minutes
+      // 🔒 SỬ DỤNG TRANSACTION để tránh double-booking
+      final result = await firestore.runTransaction<Map<String, dynamic>>((
+        transaction,
+      ) async {
+        // Step 1: Kiểm tra tất cả slots có còn trống không
+        final existingBookingsQuery = await firestore
+            .collection('bookings')
+            .where('courtId', isEqualTo: widget.court.id)
+            .where('date', isEqualTo: date)
+            .where(
+              'status',
+              whereIn: [
+                'Đã xác nhận',
+                'Đã thanh toán',
+                'Chờ thanh toán',
+                'Chưa thanh toán',
+              ],
+            )
+            .get();
 
-      final draftBooking = {
-        'userId': 'temp_user', // Sẽ update khi có user info
-        'courtId': widget.court.id,
-        'courtName': widget.court.name,
-        'address': widget.court.location,
-        'date': DateFormat('dd/MM/yyyy').format(_selectedDate),
-        'status': 'Chờ thanh toán', // Draft status
-        'slots': slotDetails,
-        'totalDuration': slotDetails.length * 30,
-        'totalPrice': _getTotalPrice(),
-        'orderId': orderId,
-        'customerType': widget.customerType.toString(),
-        'bookingType': widget.bookingType.toString(),
-        'createdAt': FieldValue.serverTimestamp(),
-        'expiresAt': Timestamp.fromDate(
-          expiresAt,
-        ), // Auto-expire after 5 minutes
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+        // Tập hợp các slot đã được đặt
+        final bookedSlots = <String>{};
+        final conflictDetails = <String>[]; // Lưu chi tiết slot bị conflict
 
-      final docRef = await firestore.collection('bookings').add(draftBooking);
-      print('✅ Draft booking created with ID: ${docRef.id}');
-      print('⏰ Will expire at: ${expiresAt.toIso8601String()}');
-      return docRef.id;
+        for (final doc in existingBookingsQuery.docs) {
+          final booking = doc.data();
+          final existingSlots = booking['slots'] as List<dynamic>?;
+
+          // Bỏ qua booking đã hết hạn
+          if (booking['status'] == 'Chờ thanh toán' ||
+              booking['status'] == 'Chưa thanh toán') {
+            final expiry = booking['expiresAt'] as Timestamp?;
+            if (expiry != null && now.isAfter(expiry.toDate())) {
+              continue; // Skip expired
+            }
+          }
+
+          if (existingSlots != null) {
+            for (final slot in existingSlots) {
+              final slotMap = slot as Map<String, dynamic>;
+              final slotKey = '${slotMap['court']}_${slotMap['startIndex']}';
+              bookedSlots.add(slotKey);
+            }
+          }
+        }
+
+        // Step 2: Kiểm tra slots mới có bị conflict không
+        for (final slot in slotDetails) {
+          final slotKey = '${slot['court']}_${slot['startIndex']}';
+          if (bookedSlots.contains(slotKey)) {
+            conflictDetails.add(
+              '${slot['court']} (${slot['startTime']} - ${slot['endTime']})',
+            );
+          }
+        }
+
+        // Nếu có conflict, RETURN kết quả lỗi thay vì throw
+        if (conflictDetails.isNotEmpty) {
+          return {
+            'success': false,
+            'error': 'SLOT_CONFLICT',
+            'conflictSlots': conflictDetails,
+          };
+        }
+
+        // Step 3: Tất cả OK -> Tạo booking
+        final newBookingRef = firestore.collection('bookings').doc();
+
+        final draftBooking = {
+          'userId': 'temp_user',
+          'courtId': widget.court.id,
+          'courtName': widget.court.name,
+          'address': widget.court.location,
+          'date': date,
+          'status': 'Chờ thanh toán',
+          'slots': slotDetails,
+          'totalDuration': slotDetails.length * 30,
+          'totalPrice': _getTotalPrice(),
+          'orderId': orderId,
+          'customerType': widget.customerType.toString(),
+          'bookingType': widget.bookingType.toString(),
+          'createdAt': FieldValue.serverTimestamp(),
+          'expiresAt': Timestamp.fromDate(expiresAt),
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+
+        transaction.set(newBookingRef, draftBooking);
+
+        return {'success': true, 'bookingId': newBookingRef.id};
+      });
+
+      // Xử lý kết quả từ transaction
+      if (result['success'] == true) {
+        final bookingId = result['bookingId'] as String;
+        print('✅ Draft booking created with TRANSACTION, ID: $bookingId');
+        print('⏰ Will expire at: ${expiresAt.toIso8601String()}');
+        return bookingId;
+      } else {
+        // Có conflict - hiện dialog
+        conflictSlots = List<String>.from(result['conflictSlots'] ?? []);
+
+        if (mounted) {
+          await showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.orange,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Slot đã được đặt',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
+                ],
+              ),
+              content: Text(
+                'Rất tiếc! Các slot sau đã được người khác đặt trước:\n\n${conflictSlots.join('\n')}\n\nVui lòng chọn slot khác.',
+                style: const TextStyle(fontSize: 14),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                  },
+                  child: const Text('Đã hiểu'),
+                ),
+              ],
+            ),
+          );
+
+          // Reload lại slots và clear selection
+          await _loadBookedSlotsForDate(_selectedDate);
+          setState(() {
+            _selectedSlots.clear();
+          });
+        }
+
+        return null;
+      }
     } catch (e) {
-      print('❌ Error creating draft booking: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+      print('❌ Transaction failed: $e');
+      print('❌ Error type: ${e.runtimeType}');
+      print('❌ Error string: ${e.toString()}');
+
+      if (mounted) {
+        // Xử lý các loại lỗi khác nhau
+        final errorString = e.toString();
+
+        if (errorString.contains('SLOT_CONFLICT')) {
+          // Lỗi slot đã được đặt - parse conflict slots
+          String conflictSlots = '';
+          try {
+            // Parse: "Exception: SLOT_CONFLICT:Sân 1 (10:00 - 10:30), Sân 1 (10:30 - 11:00)"
+            final startIndex = errorString.indexOf('SLOT_CONFLICT:');
+            if (startIndex != -1) {
+              conflictSlots = errorString.substring(
+                startIndex + 'SLOT_CONFLICT:'.length,
+              );
+              // Remove trailing characters like ")"
+              conflictSlots = conflictSlots.replaceAll(RegExp(r'[)\s]+$'), '');
+            }
+          } catch (_) {
+            conflictSlots = 'Một số slot đã được đặt';
+          }
+
+          // Hiện dialog thay vì snackbar để người dùng dễ đọc hơn
+          await showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              backgroundColor: Colors.white,
+              title: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.orange,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Slot đã được đặt',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
+                ],
+              ),
+              content: Text(
+                'Rất tiếc! Các slot sau đã được người khác đặt trước:\n\n$conflictSlots\n\nVui lòng chọn slot khác.',
+                style: const TextStyle(fontSize: 14),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    // Reload lại slots để cập nhật UI
+                    _loadBookedSlotsForDate(_selectedDate);
+                    // Clear selection
+                    setState(() {
+                      _selectedSlots.clear();
+                    });
+                  },
+                  child: const Text('Đã hiểu'),
+                ),
+              ],
+            ),
+          );
+        } else if (errorString.contains('ABORTED') ||
+            errorString.contains('concurrent')) {
+          // Lỗi transaction bị abort do concurrent access
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Có người khác đang đặt slot này. Vui lòng thử lại.',
+              ),
+              backgroundColor: Colors.orange,
+              action: SnackBarAction(
+                label: 'Thử lại',
+                textColor: Colors.white,
+                onPressed: () {
+                  _loadBookedSlotsForDate(_selectedDate);
+                },
+              ),
+            ),
+          );
+        } else {
+          // Các lỗi khác - hiện chi tiết lỗi để debug
+          print('❌ Unknown error: $errorString');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Có lỗi xảy ra: ${errorString.length > 100 ? errorString.substring(0, 100) : errorString}',
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+
       return null;
     }
   }
@@ -304,6 +526,7 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
         backgroundColor: const Color(0xFF016D3B),
         elevation: 0,
       ),
+      backgroundColor: Color(0xFFF0F9F7),
       body: Column(
         children: [
           // Date picker section
@@ -492,15 +715,10 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
                           return; // Error creating draft booking
                         }
 
-                        print(
-                          '🔄 Reloading booked slots after draft creation...',
-                        );
-                        // Reload booked slots to show the new draft booking
-                        await _loadBookedSlotsForDate(_selectedDate);
-                        print('✅ Booked slots reloaded');
-
                         if (context.mounted) {
-                          Navigator.push(
+                          // Navigate to confirmation screen
+                          // Draft booking sẽ được xóa nếu user quay lại từ BookingConfirmationScreen
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => BookingConfirmationScreen(
@@ -511,11 +729,18 @@ class _CourtScheduleScreenState extends State<CourtScheduleScreen> {
                                 customerType: widget.customerType,
                                 user: null,
                                 slotDetails: slotDetails,
-                                bookingId:
-                                    bookingId, // Pass booking ID for update later
+                                bookingId: bookingId,
                               ),
                             ),
                           );
+
+                          // Khi user quay lại, reload booked slots và clear selection
+                          if (mounted) {
+                            setState(() {
+                              _selectedSlots.clear();
+                            });
+                            await _loadBookedSlotsForDate(_selectedDate);
+                          }
                         }
                       },
                 style: ElevatedButton.styleFrom(

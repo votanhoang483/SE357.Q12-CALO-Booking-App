@@ -187,7 +187,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const Icon(
                           Icons.location_on,
                           size: 20,
-                          color: const Color(0xFF016D3B),
+                          color:  Color(0xFF016D3B),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -208,7 +208,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const Icon(
                           Icons.schedule,
                           size: 20,
-                          color: const Color(0xFF016D3B),
+                          color:  Color(0xFF016D3B),
                         ),
                         const SizedBox(width: 8),
                         Text(
@@ -227,7 +227,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const Icon(
                           Icons.phone,
                           size: 20,
-                          color: const Color(0xFF016D3B),
+                          color:  Color(0xFF016D3B),
                         ),
                         const SizedBox(width: 8),
                         Text(

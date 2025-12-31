@@ -4,6 +4,7 @@ import 'package:calo_booking_app/presentation/screens/payment_screen.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_type_sheet.dart';
 import 'package:calo_booking_app/presentation/widgets/booking_target_sheet.dart';
 import 'package:calo_booking_app/presentation/viewmodels/user_viewmodel.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -115,178 +116,218 @@ class _BookingConfirmationScreenState
     return int.parse(parts[0]) * 60 + int.parse(parts[1]);
   }
 
+  // Xóa draft booking khi user quay lại
+  Future<void> _deleteDraftBooking() async {
+    if (widget.bookingId != null) {
+      try {
+        print('🗑️ Deleting draft booking: ${widget.bookingId}');
+        await FirebaseFirestore.instance
+            .collection('bookings')
+            .doc(widget.bookingId)
+            .delete();
+        print('✅ Draft booking deleted successfully');
+      } catch (e) {
+        print('❌ Error deleting draft booking: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userDocAsync = ref.watch(currentUserDocProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.white),
-        title: const Text(
-          'Đặt lịch ngày trực quan',
-          style: TextStyle(color: Colors.white),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        // Xóa draft booking trước khi quay lại
+        await _deleteDraftBooking();
+
+        if (context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          iconTheme: IconThemeData(color: Colors.white),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () async {
+              await _deleteDraftBooking();
+              if (context.mounted) {
+                Navigator.of(context).pop();
+              }
+            },
+          ),
+          title: const Text(
+            'Đặt lịch ngày trực quan',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: const Color(0xFF016D3B),
+          elevation: 0,
         ),
-        backgroundColor: const Color(0xFF016D3B),
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        child: Container(
-          color: const Color(0xFF016D3B),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Court Information Section
-                _buildSectionTitle('Thông tin sân'),
-                const SizedBox(height: 12),
-                _buildInfoItem(
-                  icon: Icons.sports_tennis,
-                  title: 'Tên CLB',
-                  content: widget.court.name,
-                ),
-                _buildInfoItem(
-                  icon: Icons.location_on,
-                  title: 'Địa chỉ',
-                  content: widget.court.location,
-                ),
-                const SizedBox(height: 24),
+        body: SingleChildScrollView(
+          child: Container(
+            color: const Color(0xFF016D3B),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Court Information Section
+                  _buildSectionTitle('Thông tin sân'),
+                  const SizedBox(height: 12),
+                  _buildInfoItem(
+                    icon: Icons.sports_tennis,
+                    title: 'Tên CLB',
+                    content: widget.court.name,
+                  ),
+                  _buildInfoItem(
+                    icon: Icons.location_on,
+                    title: 'Địa chỉ',
+                    content: widget.court.location,
+                  ),
+                  const SizedBox(height: 24),
 
-                // Booking Details Section
-                _buildSectionTitle('Thông tin lịch đặt'),
-                const SizedBox(height: 12),
-                _buildInfoItem(
-                  icon: Icons.calendar_today,
-                  title: 'Ngày',
-                  content: DateFormat('dd/MM/yyyy').format(widget.selectedDate),
-                ),
-                _buildInfoItem(
-                  icon: Icons.access_time,
-                  title: 'Khung giờ',
-                  content: _formatSlotDetails(),
-                ),
-                _buildInfoItem(
-                  icon: Icons.person,
-                  title: 'Đối tượng',
-                  content: _getCustomerTypeLabel(),
-                ),
-                _buildInfoItem(
-                  icon: Icons.schedule,
-                  title: 'Tổng giờ',
-                  content: '${_calculateTotalMinutes()} phút',
-                ),
-                _buildPriceItem(_calculateTotalPrice()),
-                const SizedBox(height: 24),
+                  // Booking Details Section
+                  _buildSectionTitle('Thông tin lịch đặt'),
+                  const SizedBox(height: 12),
+                  _buildInfoItem(
+                    icon: Icons.calendar_today,
+                    title: 'Ngày',
+                    content: DateFormat(
+                      'dd/MM/yyyy',
+                    ).format(widget.selectedDate),
+                  ),
+                  _buildInfoItem(
+                    icon: Icons.access_time,
+                    title: 'Khung giờ',
+                    content: _formatSlotDetails(),
+                  ),
+                  _buildInfoItem(
+                    icon: Icons.person,
+                    title: 'Đối tượng',
+                    content: _getCustomerTypeLabel(),
+                  ),
+                  _buildInfoItem(
+                    icon: Icons.schedule,
+                    title: 'Tổng giờ',
+                    content: '${_calculateTotalMinutes()} phút',
+                  ),
+                  _buildPriceItem(_calculateTotalPrice()),
+                  const SizedBox(height: 24),
 
-                // Customer Information Section
-                _buildSectionTitle('Thông tin khách hàng'),
-                const SizedBox(height: 12),
-                userDocAsync.when(
-                  data: (userDoc) {
-                    final name = userDoc?['name'] ?? 'Chưa cập nhật';
-                    final phone = userDoc?['phoneNumber'] ?? 'Chưa cập nhật';
+                  // Customer Information Section
+                  _buildSectionTitle('Thông tin khách hàng'),
+                  const SizedBox(height: 12),
+                  userDocAsync.when(
+                    data: (userDoc) {
+                      final name = userDoc?['name'] ?? 'Chưa cập nhật';
+                      final phone = userDoc?['phoneNumber'] ?? 'Chưa cập nhật';
 
-                    return Column(
+                      return Column(
+                        children: [
+                          _buildInfoItem(
+                            icon: Icons.person,
+                            title: 'Tên của bạn',
+                            content: name,
+                          ),
+                          _buildInfoItem(
+                            icon: Icons.phone,
+                            title: 'Số điện thoại',
+                            content: phone,
+                          ),
+                        ],
+                      );
+                    },
+                    loading: () => Column(
                       children: [
                         _buildInfoItem(
                           icon: Icons.person,
                           title: 'Tên của bạn',
-                          content: name,
+                          content: 'Đang tải...',
                         ),
                         _buildInfoItem(
                           icon: Icons.phone,
                           title: 'Số điện thoại',
-                          content: phone,
+                          content: 'Đang tải...',
                         ),
                       ],
-                    );
-                  },
-                  loading: () => Column(
-                    children: [
-                      _buildInfoItem(
-                        icon: Icons.person,
-                        title: 'Tên của bạn',
-                        content: 'Đang tải...',
-                      ),
-                      _buildInfoItem(
-                        icon: Icons.phone,
-                        title: 'Số điện thoại',
-                        content: 'Đang tải...',
-                      ),
-                    ],
-                  ),
-                  error: (_, __) => Column(
-                    children: [
-                      _buildInfoItem(
-                        icon: Icons.person,
-                        title: 'Tên của bạn',
-                        content: 'Lỗi tải dữ liệu',
-                      ),
-                      _buildInfoItem(
-                        icon: Icons.phone,
-                        title: 'Số điện thoại',
-                        content: 'Lỗi tải dữ liệu',
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Confirm Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Generate order ID
-                      final orderId =
-                          '#${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
-                      final totalPrice = _calculateTotalPrice();
-                      final totalMinutes = _calculateTotalMinutes();
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PaymentScreen(
-                            court: widget.court,
-                            selectedDate: widget.selectedDate,
-                            selectedSlots: widget.selectedSlots,
-                            bookingType: widget.bookingType,
-                            customerType: widget.customerType,
-                            user: widget.user,
-                            orderId: orderId,
-                            totalPrice: totalPrice,
-                            totalMinutes: totalMinutes,
-                            slotDetails: widget.slotDetails,
-                            bookingId:
-                                widget.bookingId, // Pass draft booking ID
-                          ),
+                    ),
+                    error: (_, __) => Column(
+                      children: [
+                        _buildInfoItem(
+                          icon: Icons.person,
+                          title: 'Tên của bạn',
+                          content: 'Lỗi tải dữ liệu',
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4A820),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
+                        _buildInfoItem(
+                          icon: Icons.phone,
+                          title: 'Số điện thoại',
+                          content: 'Lỗi tải dữ liệu',
+                        ),
+                      ],
                     ),
-                    child: const Text(
-                      'XÁC NHẬN & THANH TOÁN',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Confirm Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // Generate order ID
+                        final orderId =
+                            '#${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
+                        final totalPrice = _calculateTotalPrice();
+                        final totalMinutes = _calculateTotalMinutes();
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PaymentScreen(
+                              court: widget.court,
+                              selectedDate: widget.selectedDate,
+                              selectedSlots: widget.selectedSlots,
+                              bookingType: widget.bookingType,
+                              customerType: widget.customerType,
+                              user: widget.user,
+                              orderId: orderId,
+                              totalPrice: totalPrice,
+                              totalMinutes: totalMinutes,
+                              slotDetails: widget.slotDetails,
+                              bookingId:
+                                  widget.bookingId, // Pass draft booking ID
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD4A820),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      child: const Text(
+                        'XÁC NHẬN & THANH TOÁN',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-              ],
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
         ),
-      ),
+      ), // Close PopScope
     );
   }
 

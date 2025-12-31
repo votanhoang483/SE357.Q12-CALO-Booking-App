@@ -13,25 +13,32 @@ class StaffScreen extends ConsumerStatefulWidget {
 }
 
 class _StaffScreenState extends ConsumerState<StaffScreen> {
+  String? _courtId;
+
   @override
   void initState() {
     super.initState();
-    // Load bookings for this staff's court
+    // Get courtId from user document
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Get current user's courtId
       final userDoc = await ref.read(currentUserDocProvider.future);
       if (userDoc != null && userDoc['courtId'] != null) {
-        final courtId = userDoc['courtId'] as String;
-        print('📍 Staff assigned to court: $courtId');
-        await ref.read(bookingsProvider.notifier).loadCourtBookings(courtId);
+        setState(() {
+          _courtId = userDoc['courtId'] as String;
+        });
+        print('📍 Staff assigned to court: $_courtId');
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final bookingsAsync = ref.watch(bookingsProvider);
     final userDoc = ref.watch(currentUserDocProvider);
+
+    // Sử dụng Stream để auto-reload khi có booking mới
+    // Đây là Concurrency Pattern: Real-time Stream
+    final bookingsStream = _courtId != null
+        ? ref.watch(courtBookingsStreamProvider(_courtId!))
+        : const AsyncValue<List<Map<String, dynamic>>>.data([]);
 
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +48,35 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
         centerTitle: true,
       ),
       drawer: _buildDrawer(context, userDoc),
-      body: _buildBody(bookingsAsync),
+      body: bookingsStream.when(
+        data: (bookings) => _buildBody(bookings),
+        loading: () => const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: Color(0xFF016D3B)),
+              SizedBox(height: 16),
+              Text('Đang tải dữ liệu...'),
+            ],
+          ),
+        ),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: Colors.red),
+              SizedBox(height: 16),
+              Text('Lỗi: $error'),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () =>
+                    ref.invalidate(courtBookingsStreamProvider(_courtId!)),
+                child: Text('Thử lại'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -290,10 +325,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            booking['slots'] != null &&
-                                    (booking['slots'] as List).isNotEmpty
-                                ? '${(booking['slots'] as List)[0]['court']} - ${(booking['slots'] as List)[0]['startTime']}'
-                                : 'N/A',
+                            _formatBookingTitle(booking),
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -406,6 +438,43 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
         ),
       ),
     );
+  }
+
+  /// Format tiêu đề booking: Sân X | HH:mm - HH:mm
+  /// Hiển thị rõ ràng sân số mấy và khoảng thời gian
+  String _formatBookingTitle(Map<String, dynamic> booking) {
+    final slots = booking['slots'] as List<dynamic>?;
+
+    if (slots == null || slots.isEmpty) {
+      return 'Không có thông tin slot';
+    }
+
+    // Lấy thông tin sân
+    final firstSlot = slots.first as Map<String, dynamic>;
+    final court = firstSlot['court'] ?? 'N/A';
+
+    // Tính giờ bắt đầu và kết thúc
+    String? startTime;
+    String? endTime;
+
+    if (slots.length == 1) {
+      // Chỉ 1 slot
+      startTime = firstSlot['startTime'] as String?;
+      endTime = firstSlot['endTime'] as String?;
+    } else {
+      // Nhiều slots liên tiếp - lấy giờ đầu và giờ cuối
+      startTime = firstSlot['startTime'] as String?;
+      final lastSlot = slots.last as Map<String, dynamic>;
+      endTime = lastSlot['endTime'] as String?;
+    }
+
+    if (startTime != null && endTime != null) {
+      return '$court | $startTime - $endTime';
+    } else if (startTime != null) {
+      return '$court | $startTime';
+    }
+
+    return '$court';
   }
 
   Color _getStatusColor(String status) {

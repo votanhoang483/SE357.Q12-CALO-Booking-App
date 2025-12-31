@@ -14,10 +14,16 @@ class BookingDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chi tiết đặt lịch'),
+        title: const Text(
+          'Chi tiết đặt lịch',
+          style: TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
         backgroundColor: const Color(0xFF016D3B),
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
+      backgroundColor: Color(0xFFF0F9F7),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,7 +456,12 @@ class BookingDetailScreen extends ConsumerWidget {
   }
 
   String _getCustomerTypeLabel(String customerType) {
-    switch (customerType) {
+    // Handle both 'student' and 'CustomerType.student' formats
+    final type = customerType.contains('.')
+        ? customerType.split('.').last
+        : customerType;
+
+    switch (type) {
       case 'student':
         return 'Học sinh - sinh viên';
       case 'adult':
@@ -463,7 +474,12 @@ class BookingDetailScreen extends ConsumerWidget {
   }
 
   String _getBookingTypeLabel(String bookingType) {
-    switch (bookingType) {
+    // Handle both 'dateBooking' and 'BookingType.dateBooking' formats
+    final type = bookingType.contains('.')
+        ? bookingType.split('.').last
+        : bookingType;
+
+    switch (type) {
       case 'dateBooking':
         return 'Cá nhân';
       case 'groupBooking':

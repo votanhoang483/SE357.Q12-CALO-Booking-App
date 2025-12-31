@@ -143,10 +143,165 @@ class BookingsNotifier extends StateNotifier<List<Map<String, dynamic>>> {
   List<Map<String, dynamic>> getAllBookings() {
     return state;
   }
+
+  // ============================================================
+  // TRANSACTION METHODS - Đảm bảo data consistency
+  // ============================================================
+
+  /// Tạo booking với Transaction để tránh double-booking
+  Future<String> createBookingWithTransaction({
+    required String courtId,
+    required String date,
+    required List<Map<String, dynamic>> slots,
+    required Map<String, dynamic> bookingData,
+  }) async {
+    try {
+      final bookingId = await _bookingRepository.createBookingWithTransaction(
+        courtId: courtId,
+        date: date,
+        slots: slots,
+        bookingData: bookingData,
+      );
+
+      // Reload bookings để cập nhật state
+      if (bookingData['userId'] != null) {
+        await loadUserBookings(bookingData['userId']);
+      }
+
+      return bookingId;
+    } catch (e) {
+      print('Error creating booking with transaction: $e');
+      rethrow;
+    }
+  }
+
+  /// Xác nhận thanh toán với Transaction
+  Future<bool> confirmPaymentWithTransaction({
+    required String bookingId,
+    required double amountPaid,
+    required String paymentMethod,
+  }) async {
+    try {
+      final success = await _bookingRepository.confirmPaymentWithTransaction(
+        bookingId: bookingId,
+        amountPaid: amountPaid,
+        paymentMethod: paymentMethod,
+      );
+
+      if (success) {
+        // Update local state
+        final updatedBookings = state.map((booking) {
+          if (booking['id'] == bookingId) {
+            return {
+              ...booking,
+              'status': 'Đã thanh toán',
+              'paymentStatus': 'paid',
+              'amountPaid': amountPaid,
+            };
+          }
+          return booking;
+        }).toList();
+        state = updatedBookings;
+      }
+
+      return success;
+    } catch (e) {
+      print('Error confirming payment: $e');
+      rethrow;
+    }
+  }
+
+  /// Hủy booking với Transaction (có tính refund)
+  Future<Map<String, dynamic>> cancelBookingWithTransaction({
+    required String bookingId,
+    required String reason,
+  }) async {
+    try {
+      final result = await _bookingRepository.cancelBookingWithTransaction(
+        bookingId: bookingId,
+        reason: reason,
+      );
+
+      if (result['success'] == true) {
+        // Update local state
+        final updatedBookings = state.map((booking) {
+          if (booking['id'] == bookingId) {
+            return {
+              ...booking,
+              'status': 'Đã hủy',
+              'refundAmount': result['refundAmount'],
+              'refundStatus': result['refundStatus'],
+            };
+          }
+          return booking;
+        }).toList();
+        state = updatedBookings;
+      }
+
+      return result;
+    } catch (e) {
+      print('Error cancelling booking with transaction: $e');
+      rethrow;
+    }
+  }
+
+  /// Transfer booking với Transaction
+  Future<bool> transferBookingWithTransaction({
+    required String bookingId,
+    required String newUserId,
+    required String newUserName,
+    required String newUserPhone,
+  }) async {
+    try {
+      final success = await _bookingRepository.transferBookingWithTransaction(
+        bookingId: bookingId,
+        newUserId: newUserId,
+        newUserName: newUserName,
+        newUserPhone: newUserPhone,
+      );
+
+      if (success) {
+        // Remove from current user's list (transferred to another user)
+        state = state.where((booking) => booking['id'] != bookingId).toList();
+      }
+
+      return success;
+    } catch (e) {
+      print('Error transferring booking: $e');
+      rethrow;
+    }
+  }
 }
 
 final bookingsProvider =
     StateNotifierProvider<BookingsNotifier, List<Map<String, dynamic>>>((ref) {
       final bookingRepository = ref.watch(bookingRepositoryProvider);
       return BookingsNotifier(bookingRepository);
+    });
+
+// ============================================================
+// STREAM PROVIDER - Real-time updates (Concurrency Pattern)
+// ============================================================
+
+/// Stream provider để lắng nghe bookings của một court theo thời gian thực
+/// Khi có booking mới, UI sẽ tự động cập nhật mà không cần reload
+final courtBookingsStreamProvider =
+    StreamProvider.family<List<Map<String, dynamic>>, String>((ref, courtId) {
+      final firestore = FirebaseFirestore.instance;
+
+      print('🔄 [STREAM] Starting real-time listener for court: $courtId');
+
+      return firestore
+          .collection('bookings')
+          .where('courtId', isEqualTo: courtId)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((snapshot) {
+            print(
+              '📡 [STREAM] Received ${snapshot.docs.length} bookings update',
+            );
+            return snapshot.docs.map((doc) {
+              return {'id': doc.id, ...doc.data()};
+            }).toList();
+          });
     });

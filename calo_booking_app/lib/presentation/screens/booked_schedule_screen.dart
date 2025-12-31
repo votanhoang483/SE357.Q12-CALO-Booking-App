@@ -47,6 +47,7 @@ class _BookedScheduleScreenState extends ConsumerState<BookedScheduleScreen> {
         backgroundColor: const Color(0xFF016D3B),
         elevation: 0,
       ),
+      backgroundColor: Colors.white,
       body: bookings.isEmpty
           ? Center(
               child: Column(
@@ -172,7 +173,7 @@ class _BookedScheduleScreenState extends ConsumerState<BookedScheduleScreen> {
 
           // Court Details
           Text(
-            'Chi tiết: ${booking['courts']} | Ngày ${booking['date']}',
+            'Chi tiết: ${_formatSlotDetails(booking)} | Ngày ${booking['date']}',
             style: TextStyle(
               fontSize: 13,
               color: const Color(0xFF016D3B),
@@ -197,8 +198,50 @@ class _BookedScheduleScreenState extends ConsumerState<BookedScheduleScreen> {
         return Colors.green;
       case 'Đã hủy':
         return Colors.red;
+      case 'Đã thanh toán':
+        return Colors.blue;
+      case 'Chưa thanh toán':
+        return Colors.orange;
+      case 'Yêu cầu hủy':
+        return Colors.red;
       default:
         return Colors.grey;
     }
+  }
+
+  /// Format chi tiết slot: Sân X | HH:mm - HH:mm
+  String _formatSlotDetails(Map<String, dynamic> booking) {
+    final slots = booking['slots'] as List<dynamic>?;
+
+    if (slots == null || slots.isEmpty) {
+      return 'Không có thông tin';
+    }
+
+    // Lấy thông tin sân
+    final firstSlot = slots.first as Map<String, dynamic>;
+    final court = firstSlot['court'] ?? 'N/A';
+
+    // Tính giờ bắt đầu và kết thúc
+    String? startTime;
+    String? endTime;
+
+    if (slots.length == 1) {
+      // Chỉ 1 slot
+      startTime = firstSlot['startTime'] as String?;
+      endTime = firstSlot['endTime'] as String?;
+    } else {
+      // Nhiều slots liên tiếp - lấy giờ đầu và giờ cuối
+      startTime = firstSlot['startTime'] as String?;
+      final lastSlot = slots.last as Map<String, dynamic>;
+      endTime = lastSlot['endTime'] as String?;
+    }
+
+    if (startTime != null && endTime != null) {
+      return '$court ($startTime - $endTime)';
+    } else if (startTime != null) {
+      return '$court ($startTime)';
+    }
+
+    return '$court';
   }
 }
