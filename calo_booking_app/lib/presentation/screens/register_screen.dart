@@ -134,6 +134,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         backgroundColor: const Color(0xFF016D3B),
         elevation: 0,
       ),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(

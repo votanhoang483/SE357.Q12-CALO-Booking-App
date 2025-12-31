@@ -82,11 +82,13 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
 
   Widget _buildBody(List<Map<String, dynamic>> bookings) {
     // Calculate stats
-    final totalBookings = bookings.length;
     final pendingPayment = bookings
         .where((b) => b['status'] == 'Chưa thanh toán')
         .length;
     final paid = bookings.where((b) => b['status'] == 'Đã thanh toán').length;
+    final confirmed = bookings
+        .where((b) => b['status'] == 'Đã xác nhận')
+        .length;
     final cancelRequests = bookings
         .where((b) => b['status'] == 'Yêu cầu hủy')
         .length;
@@ -98,7 +100,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Stats Cards
-            _buildStatsRow(totalBookings, pendingPayment, paid, cancelRequests),
+            _buildStatsRow(pendingPayment, paid, confirmed, cancelRequests),
             const SizedBox(height: 24),
 
             // Bookings by status
@@ -109,16 +111,16 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     );
   }
 
-  Widget _buildStatsRow(int total, int pending, int paid, int cancel) {
+  Widget _buildStatsRow(int pending, int paid, int confirmed, int cancel) {
     return Row(
       children: [
-        _buildStatCard('Tổng cộng', total.toString(), Colors.blue),
+        _buildStatCard('Chưa Thanh toán', pending.toString(), Colors.orange),
         const SizedBox(width: 12),
-        _buildStatCard('Chờ TT', pending.toString(), Colors.orange),
+        _buildStatCard('Đã Thanh toán', paid.toString(), Colors.blue),
         const SizedBox(width: 12),
-        _buildStatCard('Đã TT', paid.toString(), Colors.green),
+        _buildStatCard('Đã Xác nhận', confirmed.toString(), Colors.green),
         const SizedBox(width: 12),
-        _buildStatCard('Hủy', cancel.toString(), Colors.red),
+        _buildStatCard('Yêu cầu hủy', cancel.toString(), Colors.red),
       ],
     );
   }
@@ -169,6 +171,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     final cancelRequests = bookings
         .where((b) => b['status'] == 'Yêu cầu hủy')
         .toList();
+    final cancelled = bookings.where((b) => b['status'] == 'Đã hủy').toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,7 +211,16 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
             onConfirm: (bookingId) => _approveCancellation(bookingId),
             onDelete: (bookingId) => _rejectCancellation(bookingId),
           ),
+          const SizedBox(height: 24),
         ],
+
+        // Cancelled bookings
+        _buildSection(
+          title: 'Đã hủy (${cancelled.length})',
+          bookings: cancelled,
+          onConfirm: null,
+          onDelete: null,
+        ),
       ],
     );
   }
